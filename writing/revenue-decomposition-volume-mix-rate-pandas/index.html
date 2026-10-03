@@ -45,9 +45,10 @@
 <article>
 <p class="eyebrow"><a href="/writing/">Writing</a></p>
 <h1 class="page-title">Volume went up and revenue went down. Here is the pandas to explain it</h1>
+<p class="dek">A price, volume, and mix decomposition in about 30 lines, with a waterfall chart at the end.</p>
 <div class="byline">
 <a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
-<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a><span class="role">Head of Revenue Operations, sFOX</span></p>
 </div>
 <p>Trading volume rose 5.4% last month. Fee revenue fell 4.0%.</p>
 <p>If you work on revenue analytics in any business that earns a small percentage of a large flow, you have been in the meeting that follows. Someone says the big clients were busy. Someone else says pricing must have slipped. A third person suspects the data. Everyone has a theory and no one has a number.</p>
@@ -163,7 +164,7 @@ ax.set_ylabel("Fee revenue ($)")
 ax.set_title(f"Volume {V1/V0-1:+.0%}, revenue {R1/R0-1:+.0%}: where the change came from")
 ax.spines[["top", "right"]].set_visible(False)
 fig.tight_layout()</code></pre>
-<figure class="figure"><img src="/img/revenue-volume-mix-rate-waterfall.png" alt="Waterfall chart by Malek Damiri: fee revenue from August to September, split into volume, mix, and rate effects" width="1280" height="720" loading="lazy" decoding="async"><figcaption>Fee revenue, August to September, split into volume, mix, and rate effects.</figcaption></figure>
+<figure class="figure chart"><img src="/img/revenue-volume-mix-rate-waterfall.png" alt="Waterfall chart by Malek Damiri: fee revenue from August to September, split into volume, mix, and rate effects" width="1280" height="720" loading="lazy" decoding="async"><figcaption>Fee revenue, August to September, split into volume, mix, and rate effects.</figcaption></figure>
 <h2>Four things to decide before you ship it</h2>
 <p><strong>The order is a choice.</strong> This version values the volume change at the old blended rate and the rate change at the new shares. Other orderings move a small amount between the effects. None is more correct. Pick one, write it down, and use the same one every month, or your trend will reflect your method changing rather than the business.</p>
 <p><strong>The level of aggregation changes the answer.</strong> Decompose by segment, and a pricing change for one client shows up as rate. Decompose by client, and a client who trades more shows up as mix. Both are right. They answer different questions, so say which one you ran.</p>
