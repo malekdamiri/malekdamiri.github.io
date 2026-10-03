@@ -13,10 +13,12 @@
   <url>
     <loc>https://malekdamiri.com/work/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/outside-work/</loc>
@@ -28,39 +30,59 @@
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-giant-jenga.jpg</image:loc></image:image>
   </url>
   <url>
+    <loc>https://malekdamiri.com/photos/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-athens.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-hiking.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-half-marathon.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-atlanta-rooftop.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-giant-jenga.jpg</image:loc></image:image>
+  </url>
+  <url>
     <loc>https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/teaching-yourself-sql-in-ops/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/when-pipeline-does-not-start-with-a-form/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/volume-is-not-revenue/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/client-or-market/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/your-average-customer-does-not-exist/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/find-the-constraint-before-you-automate/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/small-pipelines-fail-quietly/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/a-status-file-for-every-project/</loc>
     <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
 </urlset>

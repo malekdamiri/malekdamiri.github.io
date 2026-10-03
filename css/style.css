@@ -228,3 +228,16 @@ h2 { clear: both; }
 @media (max-width: 34rem) {
 .figure.portrait { float: none; width: 11rem; margin: 0 0 1.5rem; }
 }
+.byline { display: flex; align-items: center; gap: 0.8rem; margin: 0 0 2.25rem; }
+.byline .post-meta { margin: 0; }
+.byline-photo { flex: none; line-height: 0; }
+.avatar {
+display: block;
+width: 3rem;
+height: 3rem;
+border-radius: 50%;
+object-fit: cover;
+object-position: 50% 0;
+border: 1px solid var(--line);
+}
+.lede + .byline { margin-top: -0.75rem; }
