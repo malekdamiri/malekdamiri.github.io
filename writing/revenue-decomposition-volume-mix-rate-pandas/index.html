@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Revenue decomposition in pandas: volume, mix, rate | Malek Damiri</title>
-<meta name="description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.">
+<meta name="description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a chart.">
 <meta name="author" content="Malek Damiri">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <link rel="canonical" href="https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/">
@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="Malek Damiri">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Revenue decomposition in pandas: volume, mix, rate | Malek Damiri">
-<meta property="og:description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.">
+<meta property="og:description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a chart.">
 <meta property="og:url" content="https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/">
 <meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
 <meta property="og:image:width" content="1200">
@@ -24,8 +24,8 @@
 <meta name="twitter:image:alt" content="Malek Damiri">
 <meta property="article:author" content="Malek Damiri">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/style.css?v=20261003d">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/#post","mainEntityOfPage":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","url":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","headline":"Volume went up and revenue went down. Here is the pandas to explain it","description":"Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","url":"https://malekdamiri.com/img/revenue-volume-mix-rate-waterfall-v2.png","width":1600,"height":840},"inLanguage":"en-US","articleSection":"Systems","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+<link rel="stylesheet" href="/css/style.css?v=20261003e">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/#post","mainEntityOfPage":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","url":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","headline":"Volume went up and revenue went down. Here is the pandas to explain it","description":"Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a chart.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","url":"https://malekdamiri.com/img/revenue-volume-mix-rate-effects.png","width":1600,"height":540},"inLanguage":"en-US","articleSection":"Systems","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -45,7 +45,7 @@
 <article>
 <p class="eyebrow"><a href="/writing/">Writing</a></p>
 <h1 class="page-title">Volume went up and revenue went down. Here is the pandas to explain it</h1>
-<p class="dek">A price, volume, and mix decomposition in about 30 lines, with a waterfall chart at the end.</p>
+<p class="dek">A price, volume, and mix decomposition in about 30 lines, with a chart at the end.</p>
 <div class="byline">
 <a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
 <p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a><span class="role">Head of Revenue Operations, sFOX</span></p>
@@ -158,37 +158,34 @@ assert np.isclose(volume_effect + mix_by_seg.sum() + rate_by_seg.sum(), R1 - R0)
 <p>Now the meeting has something to work with. The extra volume was worth $106k at August’s blended rate. Retail, the highest-fee segment, lost share, and that cost $46k. The fee cuts cost $136k, most of it institutional, because a small cut applied to the largest volume is the biggest number on the page.</p>
 <p>All three planted changes came back out, each in the right place. The headline that volume grew 5% was true and beside the point.</p>
 <h2>The chart</h2>
-<p>A waterfall is the natural picture for this. Start at August’s revenue, step through the three effects, land on September’s.</p>
+<p>One bar per effect is enough. Bars that added revenue grow right from zero, bars that cost revenue grow left, and the net change sits underneath.</p>
 <pre><code>import matplotlib.pyplot as plt
 
+plt.rcParams["font.family"] = ["Helvetica Neue", "Arial", "sans-serif"]
+
 mix_effect, rate_effect = mix_by_seg.sum(), rate_by_seg.sum()
-labels  = ["August", "Volume", "Mix", "Rate", "September"]
-heights = [R0, volume_effect, mix_effect, rate_effect, R1]
-bottoms = [0, R0, R0 + volume_effect, R0 + volume_effect + mix_effect, 0]
-BLUE, RED, GRAY = "#2a78d6", "#e34948", "#8b857b"
-colors  = [GRAY] + [BLUE if h &gt;= 0 else RED for h in heights[1:4]] + [GRAY]
+effects = {"Volume": volume_effect, "Mix": mix_effect, "Rate": rate_effect, "Net change": R1 - R0}
+BLUE, RED, GRAY, INK = "#2a78d6", "#e34948", "#8b857b", "#1d1b18"
 
-fig, ax = plt.subplots(figsize=(8, 4.2))
-ax.bar(labels, heights, bottom=bottoms, color=colors, width=0.46)
+fig, ax = plt.subplots(figsize=(8, 2.7))
+names = list(effects)[::-1]                       # barh draws bottom-up
+values = [effects[n] for n in names]
+colors = [GRAY if n == "Net change" else (BLUE if v &gt;= 0 else RED) for n, v in zip(names, values)]
+ax.barh(names, values, color=colors, height=0.52)
 
-levels = [R0, R0 + volume_effect, R0 + volume_effect + mix_effect, R1]
-for i, y in enumerate(levels):                      # connectors between steps
-    ax.plot([i + 0.23, i + 0.77], [y, y], color="#b9b3a8", linewidth=1)
-for i, (b, h) in enumerate(zip(bottoms, heights)):  # one label per bar
-    text = f"${h/1e3:,.0f}k" if i in (0, 4) else f"{h/1e3:+,.0f}k"
-    ax.text(i, max(b, b + h) + R0 * 0.02, text, ha="center", fontsize=11, fontweight="bold")
+pad = max(abs(v) for v in values) * 0.03
+for y, v in enumerate(values):                    # value at the end of each bar
+    ax.text(v + (pad if v &gt;= 0 else -pad), y, f"{v/1e3:+,.0f}k",
+            va="center", ha="left" if v &gt;= 0 else "right", fontsize=11, color=INK)
 
-ax.set_title("Fee revenue, August to September", loc="left", fontsize=12, fontweight="bold", pad=14)
-ax.yaxis.set_major_formatter(lambda v, _: f"${v/1e6:.1f}M")
-ax.set_ylim(0, R0 * 1.16)
-ax.grid(axis="y", color="#e7e2d8", linewidth=1)
-ax.set_axisbelow(True)
-ax.tick_params(length=0, labelsize=10.5)
-for side in ["top", "right", "left"]:
-    ax.spines[side].set_visible(False)
-ax.spines["bottom"].set_color("#b9b3a8")
+ax.axvline(0, color=INK, linewidth=1)
+ax.set_xlim(min(values) * 1.28, max(values) * 1.28)
+ax.xaxis.set_visible(False)
+ax.tick_params(axis="y", length=0, labelsize=11, labelcolor=INK)
+for side in ax.spines.values():
+    side.set_visible(False)
 fig.tight_layout()</code></pre>
-<figure class="figure chart"><img src="/img/revenue-volume-mix-rate-waterfall-v2.png" alt="Waterfall chart by Malek Damiri: fee revenue from August to September, split into volume, mix, and rate effects" width="1600" height="840" loading="lazy" decoding="async"><figcaption>Fee revenue, August to September, split into volume, mix, and rate effects.</figcaption></figure>
+<figure class="figure chart"><img src="/img/revenue-volume-mix-rate-effects.png" alt="Bar chart by Malek Damiri: volume, mix, and rate effects and the net change in fee revenue from August to September" width="1600" height="540" loading="lazy" decoding="async"><figcaption>What the code above draws: the three effects and the net change, in thousands of dollars.</figcaption></figure>
 <h2>Four things to decide before you ship it</h2>
 <p><strong>The order is a choice.</strong> This version values the volume change at the old blended rate and the rate change at the new shares. Other orderings move a small amount between the effects. None is more correct. Pick one, write it down, and use the same one every month, or your trend will reflect your method changing rather than the business.</p>
 <p><strong>The level of aggregation changes the answer.</strong> Decompose by segment, and a pricing change for one client shows up as rate. Decompose by client, and a client who trades more shows up as mix. Both are right. They answer different questions, so say which one you ran.</p>
