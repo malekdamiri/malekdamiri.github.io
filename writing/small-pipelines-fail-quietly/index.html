@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small pipelines fail quietly | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on monitoring small data pipelines: check freshness and row counts, alert on absence, and treat unknown as a status.">
+<meta name="author" content="Malek Damiri">
+<link rel="canonical" href="https://malekdamiri.com/writing/small-pipelines-fail-quietly/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Small pipelines fail quietly | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on monitoring small data pipelines: check freshness and row counts, alert on absence, and treat unknown as a status.">
+<meta property="og:url" content="https://malekdamiri.com/writing/small-pipelines-fail-quietly/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="article:published_time" content="2026-10-03">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/small-pipelines-fail-quietly/#post","mainEntityOfPage":"https://malekdamiri.com/writing/small-pipelines-fail-quietly/","url":"https://malekdamiri.com/writing/small-pipelines-fail-quietly/","headline":"Small pipelines fail quietly","description":"Malek Damiri on monitoring small data pipelines: check freshness and row counts, alert on absence, and treat unknown as a status.","datePublished":"2026-10-03","dateModified":"2026-10-03","author":{"@id":"https://malekdamiri.com/#person"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":"https://malekdamiri.com/img/malek-damiri-og.jpg","inLanguage":"en-US"},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/"],"image":"https://malekdamiri.com/img/malek-damiri.jpg"}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">Small pipelines fail quietly</h1>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a> · <time datetime="2026-10-03">October 3, 2026</time></p>
+<p>A big data platform fails loudly. Alerts fire and someone gets paged. The small pipelines an analytics team runs on its own, the scheduled scripts and nightly syncs, fail in a different way. They stop, and the dashboard keeps showing yesterday’s numbers with total confidence.</p>
+<p>After enough of those, I wrote a monitor for my own jobs. This is what I learned building it.</p>
+<h2>A job that didn’t run sends no error</h2>
+<p>Most alerting watches for failures. The common failure is absence: the machine was asleep, the schedule was disabled, a token expired before the first line ran. Check for the last success, not the last error.</p>
+<h2>Check the data, not the job</h2>
+<p>A green run tells you the script exited cleanly. It doesn’t tell you rows landed. For every pipeline I check two things at the destination: when the table last changed, and how many rows it has. Stale or shrinking tables get flagged even when the job reports success.</p>
+<h2>Make &ldquo;unknown&rdquo; a status</h2>
+<p>If the monitor can’t reach a source, it should say so. A check that silently passes when it can’t see is worse than no check.</p>
+<h2>Reconcile on a schedule</h2>
+<p>Incremental syncs drift. Records get deleted or archived upstream and nothing tells you. A periodic full comparison against the source catches what the increments miss.</p>
+<h2>Put freshness on the dashboard</h2>
+<p>The cheapest fix of all is a &ldquo;data as of&rdquo; line where people can see it. It turns a silent failure into something a reader notices on their own.</p>
+<p>None of this needs a platform. Mine is one script and a status page. The work is deciding, for each pipeline, what healthy means and writing that down as a check.</p>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>
