@@ -39,6 +39,9 @@
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-half-marathon.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-atlanta-rooftop.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-giant-jenga.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-on-the-coast.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-walking-ben.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/</loc>
@@ -84,5 +87,17 @@
     <loc>https://malekdamiri.com/writing/a-status-file-for-every-project/</loc>
     <lastmod>2026-10-03</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/ben/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-on-the-coast.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-walking-ben.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-car-selfie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-selfie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-piedmont-park.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-bandana.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-car.jpg</image:loc></image:image>
   </url>
 </urlset>
