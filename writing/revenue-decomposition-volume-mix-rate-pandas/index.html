@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revenue decomposition in pandas: volume, mix, rate | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.">
+<meta name="author" content="Malek Damiri">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Revenue decomposition in pandas: volume, mix, rate | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.">
+<meta property="og:url" content="https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Malek Damiri">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/#post","mainEntityOfPage":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","url":"https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/","headline":"Volume went up and revenue went down. Here is the pandas to explain it","description":"Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a waterfall chart.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","url":"https://malekdamiri.com/img/revenue-volume-mix-rate-waterfall.png","width":1280,"height":720},"inLanguage":"en-US","articleSection":"Systems","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">Volume went up and revenue went down. Here is the pandas to explain it</h1>
+<div class="byline">
+<a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+</div>
+<p>Trading volume rose 5.4% last month. Fee revenue fell 4.0%.</p>
+<p>If you work on revenue analytics in any business that earns a small percentage of a large flow, you have been in the meeting that follows. Someone says the big clients were busy. Someone else says pricing must have slipped. A third person suspects the data. Everyone has a theory and no one has a number.</p>
+<p>There is a standard way to replace the theories with arithmetic. Finance teams call it price, volume, and mix analysis. It splits a change in revenue into three parts that add up exactly to the total, and it takes very little pandas. This article walks through it on a synthetic dataset, so you can run every line.</p>
+<h2>The setup</h2>
+<p>The example is a brokerage-style business with three client segments that pay very different fees:</p>
+<table>
+<thead><tr><th>Segment</th><th class="num">Share of clients</th><th class="num">Fee</th></tr></thead>
+<tbody>
+<tr><td>Retail</td><td class="num">70%</td><td class="num">35 bps</td></tr>
+<tr><td>Professional</td><td class="num">25%</td><td class="num">12 bps</td></tr>
+<tr><td>Institutional</td><td class="num">5%</td><td class="num">4 bps</td></tr>
+</tbody>
+</table>
+<p>Volumes are lognormal, so a handful of clients account for most of the flow, which is how these businesses look in practice. I planted three changes in September: retail volume drops, institutional volume jumps, and the professional and institutional segments each get a small fee cut. Planting the answer matters. It lets you check that the method finds what you put there.</p>
+<pre><code>import numpy as np
+import pandas as pd
+
+rng = np.random.default_rng(7)
+
+segments = {            # share of clients, typical monthly volume, fee in bps
+    "Retail":        (0.70, 2e5,  35),
+    "Professional":  (0.25, 4e6,  12),
+    "Institutional": (0.05, 9e7,   4),
+}
+growth    = {"Retail": 0.92, "Professional": 1.05, "Institutional": 1.45}
+fee_shift = {"Retail": 0.0,  "Professional": -0.5, "Institutional": -0.4}
+
+rows = []
+for seg, (share, typical, bps) in segments.items():
+    for cid in range(int(400 * share)):
+        for month in ["2026-08", "2026-09"]:
+            sept = month == "2026-09"
+            vol = rng.lognormal(np.log(typical), 0.9) * (growth[seg] if sept else 1.0)
+            fee = bps + (fee_shift[seg] if sept else 0.0)
+            rows.append((f"{seg[:3]}-{cid:03d}", seg, month, vol, fee))
+
+df = pd.DataFrame(rows, columns=["client", "segment", "month", "volume", "fee_bps"])
+df["revenue"] = df["volume"] * df["fee_bps"] / 1e4</code></pre>
+<p>Here is what the headline numbers look like:</p>
+<table>
+<thead><tr><th></th><th class="num">August</th><th class="num">September</th></tr></thead>
+<tbody>
+<tr><td>Volume</td><td class="num">$3.14bn</td><td class="num">$3.31bn (+5.4%)</td></tr>
+<tr><td>Blended rate</td><td class="num">6.25 bps</td><td class="num">5.69 bps</td></tr>
+<tr><td>Fee revenue</td><td class="num">$1,963k</td><td class="num">$1,885k (-4.0%)</td></tr>
+</tbody>
+</table>
+<p>Volume is up, revenue is down, and the blended rate fell by about half a basis point. The blended rate alone can’t tell you why. It falls when you cut prices, and it falls just the same when a low-fee client has a busy month.</p>
+<h2>The idea</h2>
+<p>Revenue is volume times rate, summed over segments. Write total volume as <em>V</em>, each segment’s share of that volume as <em>s</em>, each segment’s rate as <em>r</em>, and the blended rate as <em>b</em>, the share-weighted average of the segment rates. Revenue is then <em>V × b</em>, and the change from period 0 to period 1 splits into three effects:</p>
+<ul>
+<li><strong>Volume effect:</strong> <code>(V1 - V0) * b0</code>. What you would have gained if only the total moved and everything else stayed as it was.</li>
+<li><strong>Mix effect:</strong> <code>V1 * sum((s1 - s0) * (r0 - b0))</code>. What you gained or lost because volume shifted between segments that earn different rates.</li>
+<li><strong>Rate effect:</strong> <code>V1 * sum(s1 * (r1 - r0))</code>. What you gained or lost because rates changed inside segments.</li>
+</ul>
+<p>Add them up and the terms cancel to <code>V1 * b1 - V0 * b0</code>, which is the revenue change. There is no residual to explain away.</p>
+<p>One detail in the mix term is worth a sentence. Measuring each segment’s rate against the blended rate, <code>(r0 - b0)</code>, gives the same total as using <code>r0</code> alone, because the share changes sum to zero. It makes the per-segment numbers readable, though. Gaining share in a segment that earns less than average comes out negative, which is what your intuition expects.</p>
+<h2>The decomposition</h2>
+<p>Aggregate to one row per segment per month, compute share and rate, and the rest is a few lines.</p>
+<pre><code>seg = (df.groupby(["month", "segment"], as_index=False)
+         .agg(volume=("volume", "sum"), revenue=("revenue", "sum")))
+seg["rate"]  = seg["revenue"] / seg["volume"]
+seg["share"] = seg["volume"] / seg.groupby("month")["volume"].transform("sum")
+
+p0 = seg[seg["month"] == "2026-08"].set_index("segment")
+p1 = seg[seg["month"] == "2026-09"].set_index("segment")
+
+V0, V1 = p0["volume"].sum(), p1["volume"].sum()
+R0, R1 = p0["revenue"].sum(), p1["revenue"].sum()
+b0 = R0 / V0
+
+volume_effect = (V1 - V0) * b0
+mix_by_seg    = V1 * (p1["share"] - p0["share"]) * (p0["rate"] - b0)
+rate_by_seg   = V1 * p1["share"] * (p1["rate"] - p0["rate"])
+
+assert np.isclose(volume_effect + mix_by_seg.sum() + rate_by_seg.sum(), R1 - R0)</code></pre>
+<p>Keep the <code>assert</code>. It is the line that makes other people trust the method, and it will catch you the day someone changes a join upstream.</p>
+<h2>The result</h2>
+<table>
+<thead><tr><th>Effect</th><th class="num">Amount</th></tr></thead>
+<tbody>
+<tr><td>Volume</td><td class="num">+$106k</td></tr>
+<tr><td>Mix</td><td class="num">-$48k</td></tr>
+<tr><td>Rate</td><td class="num">-$136k</td></tr>
+<tr><td><strong>Total change</strong></td><td class="num"><strong>-$79k</strong></td></tr>
+</tbody>
+</table>
+<p>And by segment:</p>
+<table>
+<thead><tr><th>Segment</th><th class="num">Mix</th><th class="num">Rate</th></tr></thead>
+<tbody>
+<tr><td>Retail</td><td class="num">-$46k</td><td class="num">$0</td></tr>
+<tr><td>Professional</td><td class="num">+$1k</td><td class="num">-$32k</td></tr>
+<tr><td>Institutional</td><td class="num">-$3k</td><td class="num">-$105k</td></tr>
+</tbody>
+</table>
+<p>Now the meeting has something to work with. The extra volume was worth $106k at August’s blended rate. Retail, the highest-fee segment, lost share, and that cost $46k. The fee cuts cost $136k, most of it institutional, because a small cut applied to the largest volume is the biggest number on the page.</p>
+<p>All three planted changes came back out, each in the right place. The headline that volume grew 5% was true and beside the point.</p>
+<h2>The chart</h2>
+<p>A waterfall is the natural picture for this. Start at August’s revenue, step through the three effects, land on September’s.</p>
+<pre><code>import matplotlib.pyplot as plt
+
+mix_effect, rate_effect = mix_by_seg.sum(), rate_by_seg.sum()
+labels  = ["Revenue Aug", "Volume effect", "Mix effect", "Rate effect", "Revenue Sep"]
+heights = [R0, volume_effect, mix_effect, rate_effect, R1]
+bottoms = [0, R0, R0 + volume_effect, R0 + volume_effect + mix_effect, 0]
+colors  = ["#4b5563"] + ["#2e7d32" if h &gt;= 0 else "#c62828" for h in heights[1:4]] + ["#4b5563"]
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+ax.bar(labels, heights, bottom=bottoms, color=colors, width=0.6)
+ax.set_ylabel("Fee revenue ($)")
+ax.set_title(f"Volume {V1/V0-1:+.0%}, revenue {R1/R0-1:+.0%}: where the change came from")
+ax.spines[["top", "right"]].set_visible(False)
+fig.tight_layout()</code></pre>
+<figure class="figure"><img src="/img/revenue-volume-mix-rate-waterfall.png" alt="Waterfall chart by Malek Damiri: fee revenue from August to September, split into volume, mix, and rate effects" width="1280" height="720" loading="lazy" decoding="async"><figcaption>Fee revenue, August to September, split into volume, mix, and rate effects.</figcaption></figure>
+<h2>Four things to decide before you ship it</h2>
+<p><strong>The order is a choice.</strong> This version values the volume change at the old blended rate and the rate change at the new shares. Other orderings move a small amount between the effects. None is more correct. Pick one, write it down, and use the same one every month, or your trend will reflect your method changing rather than the business.</p>
+<p><strong>The level of aggregation changes the answer.</strong> Decompose by segment, and a pricing change for one client shows up as rate. Decompose by client, and a client who trades more shows up as mix. Both are right. They answer different questions, so say which one you ran.</p>
+<p><strong>New and lost clients have no rate in one of the periods.</strong> At client level you have to decide what to do with them. I treat them as mix, a share moving to or from zero, and report them on their own line so they don’t hide inside the total.</p>
+<p><strong>Rate here means revenue divided by volume.</strong> Anything that changes revenue without changing volume, such as rebates, credits, and minimum fees, lands in the rate effect. If those are large, split them out before you decompose.</p>
+<h2>What to take away</h2>
+<p>A revenue change is explained when you can say it in one sentence: revenue moved by X, of which volume was A, mix was B, and rate was C. If the write-up can’t be put in that form, the analysis isn’t finished. The code to get there is short enough that there is no reason to guess.</p>
+<p class="more"><a href="/writing/revenue-decomposition-volume-mix-rate-pandas/volume-mix-rate-decomposition-malek-damiri.pdf">Download this article as a PDF</a></p>
+<nav class="related" aria-label="Related writing">
+<h2>Related</h2>
+<ul class="rows posts">
+<li><a class="label" href="/writing/volume-is-not-revenue/">Volume is not revenue</a></li>
+<li><a class="label" href="/writing/revenue-vs-volume-metrics/">Revenue vs. volume: the metrics that reveal actual commercial performance</a></li>
+<li><a class="label" href="/writing/your-average-customer-does-not-exist/">Your average customer doesn’t exist</a></li>
+</ul>
+</nav>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="/photos/">Photos</a> · <a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>
