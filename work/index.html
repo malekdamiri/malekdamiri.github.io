@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selected work | Malek Damiri</title>
+<meta name="description" content="Selected revenue operations and analytics projects by Malek Damiri: dashboard rebuilds, reconciliation pipelines, and automated reporting.">
+<meta name="author" content="Malek Damiri">
+<link rel="canonical" href="https://malekdamiri.com/work/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Selected work | Malek Damiri">
+<meta property="og:description" content="Selected revenue operations and analytics projects by Malek Damiri: dashboard rebuilds, reconciliation pipelines, and automated reporting.">
+<meta property="og:url" content="https://malekdamiri.com/work/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"CollectionPage","@id":"https://malekdamiri.com/work/#webpage","url":"https://malekdamiri.com/work/","name":"Selected work | Malek Damiri","isPartOf":{"@id":"https://malekdamiri.com/#website"},"about":{"@id":"https://malekdamiri.com/#person"},"author":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/"],"image":"https://malekdamiri.com/img/malek-damiri.jpg"}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/" aria-current="page">Work</a>
+<a href="/writing/">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<h1 class="page-title">Selected work</h1>
+<p class="lede">Recent projects by Malek Damiri in revenue operations and analytics. Client and company specifics are left out.</p>
+<section class="project">
+<h2>Liquidity provider analytics rebuild</h2>
+<p>Rebuilt an executive-facing performance dashboard on a single, documented methodology. I consolidated several conflicting calculation methods into two documented Snowflake views, validated them three ways (source logs, warehouse tables, and the BI layer), and redeployed six tabs and 41 visuals through the QuickSight API. The reconciliation pipeline matches 11,000+ rows across seven revenue and volume metrics against source-of-truth logs. <a href="/writing/rebuilding-a-dashboard-people-stopped-trusting/">Read how I approach a rebuild</a>.</p>
+<p class="tools">Snowflake, SQL, Python, QuickSight, AWS CLI</p>
+</section>
+<section class="project">
+<h2>Executive volume and revenue reporting</h2>
+<p>Designed and shipped the dashboards the CFO and executive team use for weekly revenue, volume, and account-level review.</p>
+<p class="tools">QuickSight, Snowflake, SQL</p>
+</section>
+<section class="project">
+<h2>Volume waterfall bot</h2>
+<p>A scheduled job that explains what moved volume and revenue, driver by driver, and posts the report to Slack every morning. It runs on GitHub Actions with its own QA checks.</p>
+<p class="tools">Python, GitHub Actions, Slack</p>
+</section>
+<section class="project">
+<h2>Customer success reporting</h2>
+<p>Support tickets and conversations synced from the ticketing and messaging tools into Snowflake, reconciled nightly, and presented in a single dashboard for the customer success team.</p>
+<p class="tools">Python, Snowflake, QuickSight</p>
+</section>
+<section class="project">
+<h2>Rep productivity and capacity model</h2>
+<p>A metric spec and model for sales productivity that accounts for deals that never touch a web form, paired with a capacity model for planning. <a href="/writing/when-pipeline-does-not-start-with-a-form/">Related: attribution without form fills</a>.</p>
+<p class="tools">SQL, Python, Excel</p>
+</section>
+<section class="project">
+<h2>Lifecycle funnel analysis</h2>
+<p>Funnel measurement across web analytics, email, and CRM data, with holdout groups so that the email results show cause and not just correlation.</p>
+<p class="tools">SQL, Python</p>
+</section>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>
