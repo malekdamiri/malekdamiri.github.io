@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RevOps responsibilities: what to own and hand off | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on what revenue operations should own: definitions, handoffs, and CRM design. Quotas, payouts, and data plumbing belong elsewhere.">
+<meta name="author" content="Malek Damiri">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://malekdamiri.com/writing/what-revenue-operations-should-own/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="What revenue operations should own, and what it should hand off | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on what revenue operations should own: definitions, handoffs, and CRM design. Quotas, payouts, and data plumbing belong elsewhere.">
+<meta property="og:url" content="https://malekdamiri.com/writing/what-revenue-operations-should-own/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Malek Damiri">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/what-revenue-operations-should-own/#post","mainEntityOfPage":"https://malekdamiri.com/writing/what-revenue-operations-should-own/","url":"https://malekdamiri.com/writing/what-revenue-operations-should-own/","headline":"What revenue operations should own, and what it should hand off","description":"Malek Damiri on what revenue operations should own: definitions, handoffs, and CRM design. Quotas, payouts, and data plumbing belong elsewhere.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-og","url":"https://malekdamiri.com/img/malek-damiri-og.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-og.jpg","width":1200,"height":630,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, revenue operations and analytics, Atlanta, Georgia.","about":{"@id":"https://malekdamiri.com/#person"}},"inLanguage":"en-US","articleSection":"Analysis","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">What revenue operations should own, and what it should hand off</h1>
+<div class="byline">
+<a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+</div>
+<p>Revenue operations collects work. Anything that touches revenue data and has no obvious owner lands there: a report request, a broken field, a territory dispute, a question about a commission check. Each one is reasonable on its own. Together they turn the team into a help desk for the whole go-to-market org, and the work only RevOps can do gets done last.</p>
+<p>The fix is to decide on purpose what the team owns, and to hand the rest to a named owner on the other side. Here is where I’d draw the line.</p>
+<h2>Own the definitions</h2>
+<p>Someone has to decide what counts as a qualified opportunity, a booking, an active customer, and churn, and where each stage starts and ends. Those definitions need one owner and one written home, and every report should read from them.</p>
+<p>If marketing, sales, and finance each calculate pipeline their own way, the company doesn’t have a pipeline number. It has three opinions. This is the one job RevOps can’t hand off, because no other team sits across all of them.</p>
+<h2>Own the handoffs between teams</h2>
+<p>Each team owns its own stage of the funnel. Nobody owns the gap between two stages unless someone is assigned to it. That gap is where leads sit unworked, closed deals reach onboarding without context, and renewals surprise the account manager.</p>
+<p>Routing rules, response-time targets, and the fields that carry context from one team to the next belong to RevOps. So does measuring them. A handoff nobody measures slows down quietly.</p>
+<h2>Own the system design, not every request</h2>
+<p>The CRM’s structure needs one owner: objects, stages, required fields, validation rules, and who can change them. Routine admin work can be shared. Design decisions can’t, because a field added for one team changes the reports of every other team.</p>
+<p>Report requests are different. A team that builds every one-off pull never gets to the analysis that changes a decision. Build a small set of dashboards people trust, make self-serve the default, and spend the time saved on questions nobody else can answer.</p>
+<h2>Hand off the decisions</h2>
+<p>Quotas, territories, comp plans, and pricing belong to the leaders accountable for the results, usually with finance in the room. RevOps should build the models behind them: capacity, coverage, funnel math, and the trade-offs between options.</p>
+<p>When RevOps makes the call itself, it inherits every argument about it, and its analysis stops looking neutral. Commissions work the same way. RevOps can supply the attainment data, but the payout and the controls around it belong with finance.</p>
+<h2>Keep the logic, share the plumbing</h2>
+<p>Where a data engineering team exists, ingestion, the warehouse, and job scheduling belong there. RevOps keeps the business logic: how a booking is defined in SQL, how accounts map across systems, and what counts as a match in a reconciliation. In a smaller company RevOps often runs both, which works as long as the logic is written down well enough to move later.</p>
+<p>A simple test helps with each new request: would it break if every team ran its own version? If yes, it’s RevOps work. If it has a natural home somewhere else, hand it over cleanly, with the data and the documentation, and send the next request to its new owner.</p>
+<nav class="related" aria-label="Related writing">
+<h2>Related</h2>
+<ul class="rows posts">
+<li><a class="label" href="/writing/when-pipeline-does-not-start-with-a-form/">When pipeline doesn’t start with a form fill</a></li>
+<li><a class="label" href="/writing/find-the-constraint-before-you-automate/">Find the constraint before you automate</a></li>
+<li><a class="label" href="/writing/rebuilding-a-dashboard-people-stopped-trusting/">Rebuilding a dashboard people have stopped trusting</a></li>
+</ul>
+</nav>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="/photos/">Photos</a> · <a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>
