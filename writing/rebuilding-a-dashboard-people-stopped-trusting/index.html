@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rebuilding a dashboard people have stopped trusting | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on rebuilding an executive dashboard: trace one wrong number to its source, pick one methodology, and validate it three ways.">
+<meta name="author" content="Malek Damiri">
+<link rel="canonical" href="https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rebuilding a dashboard people have stopped trusting | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on rebuilding an executive dashboard: trace one wrong number to its source, pick one methodology, and validate it three ways.">
+<meta property="og:url" content="https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="article:published_time" content="2026-10-03">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/#post","mainEntityOfPage":"https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/","url":"https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/","headline":"Rebuilding a dashboard people have stopped trusting","description":"Malek Damiri on rebuilding an executive dashboard: trace one wrong number to its source, pick one methodology, and validate it three ways.","datePublished":"2026-10-03","dateModified":"2026-10-03","author":{"@id":"https://malekdamiri.com/#person"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":"https://malekdamiri.com/img/malek-damiri-og.jpg","inLanguage":"en-US"},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/"],"image":"https://malekdamiri.com/img/malek-damiri.jpg"}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">Rebuilding a dashboard people have stopped trusting</h1>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a> · <time datetime="2026-10-03">October 3, 2026</time></p>
+<p>Most analytics teams have one: the dashboard people open mainly to argue with. Two tabs disagree about the same number. Someone keeps a second report open as a sanity check. Then something implausible shows up on a tile, it gets escalated, and the dashboard’s credibility is gone.</p>
+<p>I’ve rebuilt dashboards like this. Here is the approach I use, without the specifics.</p>
+<h2>Trace one wrong number all the way down</h2>
+<p>Don’t start with a redesign. Take the single most embarrassing number and follow it to the rawest record you can get. More often than not the data isn’t wrong. The dashboard is faithfully showing one system’s version of an event while people read it as another’s. You only find that by reading raw records.</p>
+<h2>Pick one methodology and name it</h2>
+<p>When four metrics are each computed three ways, visual polish won’t help. Choose a single source of truth and write down the rules: what is included, what is excluded, and what is estimated. Then give it a name people can use in conversation.</p>
+<h2>Use fewer sources and document their scope</h2>
+<p>In a rebuild I aim for every visual to read from one or two views, each with a stated scope. Where a tab intentionally differs from the report people compare it against, a note at the top says so and explains why.</p>
+<h2>Validate three ways</h2>
+<p>Check the source logs against the warehouse table against the BI dataset, over several time windows. If all three agree, you’re done. If they don’t, the gap gets a written explanation.</p>
+<h2>Build it as code</h2>
+<p>Deploy through the BI tool’s API instead of clicking through the interface. A script that duplicates sheets, remaps datasets, and regenerates IDs makes the work repeatable and reviewable.</p>
+<h2>Keep the old version</h2>
+<p>Leave the original tabs in place next to the new ones, with snapshots for rollback. People accept a new number faster when they can compare it with the old one themselves.</p>
+<h2>Write down what is still wrong</h2>
+<p>A short list of known gaps, with reasons, does more for credibility than any chart. It tells people you checked.</p>
+<p>The stakeholders in a rebuild rarely want the same thing. An engineer wants every record included. An account lead wants it to match the report they already use. Finance trusts nothing until cash reconciles. The version that wins is the one where each of them can see how their number relates to the others.</p>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>
