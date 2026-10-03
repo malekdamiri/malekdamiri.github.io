@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to audit a revenue dashboard before launch | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on auditing a revenue dashboard before launch: tie out to the ledger, check date boundaries, currency, duplicates, filters, and freshness.">
+<meta name="author" content="Malek Damiri">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to audit a revenue dashboard before executives use it | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on auditing a revenue dashboard before launch: tie out to the ledger, check date boundaries, currency, duplicates, filters, and freshness.">
+<meta property="og:url" content="https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Malek Damiri">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/#post","mainEntityOfPage":"https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/","url":"https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/","headline":"How to audit a revenue dashboard before executives use it","description":"Malek Damiri on auditing a revenue dashboard before launch: tie out to the ledger, check date boundaries, currency, duplicates, filters, and freshness.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-og","url":"https://malekdamiri.com/img/malek-damiri-og.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-og.jpg","width":1200,"height":630,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, revenue operations and analytics, Atlanta, Georgia.","about":{"@id":"https://malekdamiri.com/#person"}},"inLanguage":"en-US","articleSection":"Systems","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">How to audit a revenue dashboard before executives use it</h1>
+<div class="byline">
+<a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+</div>
+<p>A revenue dashboard gets one first impression. If an executive finds a number in the first week that doesn’t match the board deck, every number after that is suspect, and the trust takes months to earn back. So before anything goes in front of leadership, I run the same audit. Here is the checklist, with the reasoning behind each item, because the reasoning is what tells you how hard to look.</p>
+<h2>Tie it out to the ledger</h2>
+<p>Start with the total. Whatever the dashboard calls revenue should tie to what finance recognized for the same period, or you should be able to explain every dollar of the gap. Pull the period total from the dashboard’s own query, pull the same period from the ledger, and reconcile them line by line. Timing differences, refunds, and credits are acceptable reasons to differ. &ldquo;We’re not sure&rdquo; is not.</p>
+<p>Do this for more than one period. A single month can tie by accident.</p>
+<h2>Check the date boundaries and time zones</h2>
+<p>A large share of revenue disputes come down to what day something happened. The source system stamps events in UTC, the warehouse truncates to a date, the BI tool applies the viewer’s local time zone, and the month closes at a different moment in each layer. Pick one reporting time zone, write it down, and make sure every layer agrees. Then test the edges: the last hour of the month, the first hour of the next, and the weekend daylight saving changes.</p>
+<p>While you’re there, confirm which date the dashboard keys on. Order date, invoice date, payment date, and recognition date are all defensible. Mixing them on one page is not.</p>
+<h2>Follow the currency and the fees</h2>
+<p>If revenue arrives in more than one currency, find out where the conversion happens, which rate it uses, and whether that rate matches what finance uses to close. Then find out whether the dashboard shows gross or net. Processor fees, discounts, taxes, and refunds each move the number, and each has a camp that considers its version the real one. The dashboard has to pick one, label it, and use it everywhere. A tile that says &ldquo;Revenue&rdquo; with no qualifier is a question waiting to be asked in a meeting.</p>
+<h2>Look for duplicates and late arrivals</h2>
+<p>Count distinct identifiers against raw row counts at every step of the pipeline. Joins duplicate rows quietly, and a retry in the source system can land the same record twice. Then look in the other direction: records that arrive after the period they belong to. A dashboard that shows last month as final on the first and then revises it for a week teaches readers to wait before believing anything. Decide how long a period stays open, show that status on the tile, and build the dedupe into the query instead of trusting the source to be clean.</p>
+<h2>Find the filters that silently exclude</h2>
+<p>Every dashboard carries filters that someone added for a good reason and then forgot. A status filter that drops a new order type. A date filter hard-coded to a fiscal year that has since ended. A segment filter meant for one tab that leaked into the shared dataset. Read every <code>WHERE</code> clause and every filter the BI tool applies, and for each one ask what it excludes and whether the readers know. The dangerous ones make the number smaller in a way that still looks plausible.</p>
+<h2>Freshness, and a name on the sign-off</h2>
+<p>Put a &ldquo;data as of&rdquo; timestamp on the page, computed from the data itself rather than from when the page loaded. Decide how stale is too stale, and make the dashboard say so when it crosses that line.</p>
+<p>Finally, someone has to sign off, and it shouldn’t be the person who built it. The owner of the number, usually in finance or the business, reviews the reconciliation, the definitions, and the list of known gaps, and agrees in writing that this is the version executives see. Signing off doesn’t mean the dashboard is perfect. It means someone besides the builder has looked and is willing to defend it.</p>
+<p>An audit like this always takes longer than anyone wants. It is still cheaper than relaunching a dashboard that was wrong on day one.</p>
+<nav class="related" aria-label="Related writing">
+<h2>Related</h2>
+<ul class="rows posts">
+<li><a class="label" href="/writing/how-to-rebuild-an-executive-dashboard-nobody-trusts/">How to rebuild an executive dashboard nobody trusts</a></li>
+<li><a class="label" href="/writing/snowflake-sql-patterns-for-revenue-reporting/">Snowflake SQL patterns for revenue reporting</a></li>
+<li><a class="label" href="/writing/small-pipelines-fail-quietly/">Small pipelines fail quietly</a></li>
+</ul>
+</nav>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="/photos/">Photos</a> · <a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>

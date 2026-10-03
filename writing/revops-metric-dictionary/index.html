@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to build a RevOps metric dictionary | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on building a RevOps metric dictionary: the fields each entry needs, owners, source-of-truth rules, example entries, and keeping it alive.">
+<meta name="author" content="Malek Damiri">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://malekdamiri.com/writing/revops-metric-dictionary/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The RevOps metric dictionary: definitions, owners, and source-of-truth rules | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on building a RevOps metric dictionary: the fields each entry needs, owners, source-of-truth rules, example entries, and keeping it alive.">
+<meta property="og:url" content="https://malekdamiri.com/writing/revops-metric-dictionary/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Malek Damiri">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/revops-metric-dictionary/#post","mainEntityOfPage":"https://malekdamiri.com/writing/revops-metric-dictionary/","url":"https://malekdamiri.com/writing/revops-metric-dictionary/","headline":"The RevOps metric dictionary: definitions, owners, and source-of-truth rules","description":"Malek Damiri on building a RevOps metric dictionary: the fields each entry needs, owners, source-of-truth rules, example entries, and keeping it alive.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-og","url":"https://malekdamiri.com/img/malek-damiri-og.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-og.jpg","width":1200,"height":630,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, revenue operations and analytics, Atlanta, Georgia.","about":{"@id":"https://malekdamiri.com/#person"}},"inLanguage":"en-US","articleSection":"Analysis","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">The RevOps metric dictionary: definitions, owners, and source-of-truth rules</h1>
+<div class="byline">
+<a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+</div>
+<p>Every company has a metric dictionary. In most of them it lives in people’s heads, in the SQL behind the dashboards, and in the slide where a number was last explained. Writing it down is not documentation for its own sake. It means the next argument about a number can be settled by reading instead of by meeting.</p>
+<h2>What a metric dictionary is</h2>
+<p>One entry per metric, in plain language, readable by someone in finance, sales, or data without translation. It is not a data catalog, which lists tables and columns. It is not a dashboard inventory. It sits above both and answers three questions: what does this metric mean, who decides, and where does the number come from.</p>
+<p>If a metric is not in the dictionary, it is not a metric yet. It is a query someone ran.</p>
+<h2>The fields each entry needs</h2>
+<p>Eight fields cover almost everything.</p>
+<ol>
+<li><strong>Name.</strong> One canonical name, plus the aliases people actually use so the entry can be found.</li>
+<li><strong>Definition.</strong> One or two sentences on what it measures and what it excludes.</li>
+<li><strong>Formula in words.</strong> Not SQL. A sentence a non-technical reader can check against the SQL.</li>
+<li><strong>Owner.</strong> A person, the one who decides what the metric means and signs off on changes.</li>
+<li><strong>Source of truth.</strong> Which system, and which table or report inside it, wins when sources disagree.</li>
+<li><strong>Grain.</strong> What one row represents: per customer per month, per deal, per invoice line.</li>
+<li><strong>Refresh.</strong> How often the number updates and how to tell when it last did.</li>
+<li><strong>Known gaps.</strong> What the number does not capture, which cases are handled by hand, and where it is known to drift.</li>
+</ol>
+<p>The last field is the most useful and the least often written. A metric with its gaps listed is one people trust more, not less, because they can see that someone has looked.</p>
+<h2>A few example entries</h2>
+<p>Bookings. Definition: contract value of opportunities closed-won in the period. Formula: sum of the amount on closed-won opportunities by close date, net of discounts. Owner: sales operations lead. Source of truth: the CRM opportunity object. Grain: one row per opportunity. Refresh: nightly. Known gaps: amendments after close are not reflected unless the opportunity is reopened.</p>
+<p>Recognized revenue. Definition: revenue earned in the period under the company’s recognition policy. Formula: as published by finance at close. Owner: the controller. Source of truth: the general ledger, fed by billing. Grain: one row per customer per month. Refresh: monthly, after close. Known gaps: not available before close, and any pre-close estimate is labeled as an estimate.</p>
+<p>Active customer. Definition: a customer with at least one paid invoice in the trailing window. Formula: count of distinct billing customer IDs with a paid invoice in the trailing window. Owner: RevOps. Source of truth: billing, joined to the account mapping table. Grain: one row per customer per day. Refresh: daily. Known gaps: customers on unpaid pilots are excluded, and parent and child accounts count once.</p>
+<p>These are generic on purpose. Yours will differ in every detail. The shape is the point.</p>
+<h2>Source-of-truth rules</h2>
+<p>A metric has exactly one source of truth. Other systems can hold copies, and the dictionary should say they are copies. The rule I use is that the system where a fact is created owns it. Deals are created in the CRM, so the CRM owns bookings. Invoices are created in billing, so billing owns billings and revenue. The warehouse creates nothing. It joins.</p>
+<p>That makes the warehouse the source of truth only for derived metrics, the ones that need both systems to exist. Even then, the entry names which upstream system wins when the two disagree, so a conflict has an answer before it happens.</p>
+<h2>How to keep it alive</h2>
+<p>A dictionary dies the day it stops matching the dashboards. Three habits keep it current. Every dashboard tile links to its dictionary entry, and a tile without an entry does not ship. Every change to a definition goes through the owner and leaves a note in the entry saying what changed and from which period. Once a quarter, each owner confirms their entries are still right or fixes them. An entry nobody will own gets deleted, because if nobody owns it, nobody should be reporting it.</p>
+<p>Keep it somewhere with history. Plain text in a repository works well. A wiki works if someone tends it. A spreadsheet works until there are two copies of it.</p>
+<p>The dictionary will not end disagreements. It changes what they are about. Instead of arguing over whose number is right, people argue over whether the definition is right, and that is an argument you can actually finish.</p>
+<nav class="related" aria-label="Related writing">
+<h2>Related</h2>
+<ul class="rows posts">
+<li><a class="label" href="/writing/how-to-define-revenue-metrics-finance-and-sales-accept/">How to define revenue metrics that finance and sales both accept</a></li>
+<li><a class="label" href="/writing/rebuilding-a-dashboard-people-stopped-trusting/">Rebuilding a dashboard people have stopped trusting</a></li>
+<li><a class="label" href="/writing/a-status-file-for-every-project/">A status file for every project</a></li>
+</ul>
+</nav>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="/photos/">Photos</a> · <a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>

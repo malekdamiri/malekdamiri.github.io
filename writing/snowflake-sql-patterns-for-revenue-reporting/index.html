@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snowflake SQL patterns for revenue reporting | Malek Damiri</title>
+<meta name="description" content="Malek Damiri on Snowflake SQL for revenue reporting: date spines, QUALIFY to dedupe, window functions, freshness checks, and ledger reconciliation.">
+<meta name="author" content="Malek Damiri">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151412" media="(prefers-color-scheme: dark)">
+<meta property="og:site_name" content="Malek Damiri">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Snowflake SQL patterns for revenue reporting | Malek Damiri">
+<meta property="og:description" content="Malek Damiri on Snowflake SQL for revenue reporting: date spines, QUALIFY to dedupe, window functions, freshness checks, and ledger reconciliation.">
+<meta property="og:url" content="https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/">
+<meta property="og:image" content="https://malekdamiri.com/img/malek-damiri-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="Malek Damiri">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image:alt" content="Malek Damiri">
+<meta property="article:author" content="Malek Damiri">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://malekdamiri.com/#website","url":"https://malekdamiri.com/","name":"Malek Damiri","inLanguage":"en-US","publisher":{"@id":"https://malekdamiri.com/#person"}},{"@type":"BlogPosting","@id":"https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/#post","mainEntityOfPage":"https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/","url":"https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/","headline":"Snowflake SQL patterns for revenue reporting","description":"Malek Damiri on Snowflake SQL for revenue reporting: date spines, QUALIFY to dedupe, window functions, freshness checks, and ledger reconciliation.","author":{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","url":"https://malekdamiri.com/"},"publisher":{"@id":"https://malekdamiri.com/#person"},"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-og","url":"https://malekdamiri.com/img/malek-damiri-og.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-og.jpg","width":1200,"height":630,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, revenue operations and analytics, Atlanta, Georgia.","about":{"@id":"https://malekdamiri.com/#person"}},"inLanguage":"en-US","articleSection":"Systems","isPartOf":{"@type":"Blog","@id":"https://malekdamiri.com/writing/#blog","name":"Writing by Malek Damiri","url":"https://malekdamiri.com/writing/"}},{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-headshot","url":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri-headshot.jpg","width":768,"height":1024,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}},{"@type":"Person","@id":"https://malekdamiri.com/#person","name":"Malek Damiri","givenName":"Malek","familyName":"Damiri","url":"https://malekdamiri.com/","jobTitle":"Head of Revenue Operations","worksFor":{"@type":"Organization","name":"sFOX","url":"https://www.sfox.com/"},"description":"Malek Damiri is Head of Revenue Operations at sFOX, based in Atlanta, Georgia. Revenue analytics, executive reporting, and the data infrastructure behind them.","homeLocation":{"@type":"Place","address":{"@type":"PostalAddress","addressLocality":"Atlanta","addressRegion":"GA","addressCountry":"US"}},"knowsAbout":["Revenue operations","Revenue analytics","Sales operations","Go-to-market strategy","Data analytics","SQL","Snowflake","Python"],"sameAs":["https://www.linkedin.com/in/malekdamiri/","https://github.com/malekdamiri","https://www.goodreads.com/malekdamiri","https://www.pinterest.com/malek_damiri/","https://soundcloud.com/malek-damiri","https://www.pinterest.com/malekdamiri43/"],"image":{"@type":"ImageObject","@id":"https://malekdamiri.com/#image-portrait","url":"https://malekdamiri.com/img/malek-damiri.jpg","contentUrl":"https://malekdamiri.com/img/malek-damiri.jpg","width":640,"height":640,"encodingFormat":"image/jpeg","name":"Malek Damiri","caption":"Malek Damiri, Head of Revenue Operations at sFOX.","about":{"@id":"https://malekdamiri.com/#person"}}}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="/">Malek Damiri</a>
+<nav class="site-nav" aria-label="Main">
+<a href="/about/">About</a>
+<a href="/work/">Work</a>
+<a href="/writing/" aria-current="page">Writing</a>
+<a href="/outside-work/">Outside work</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<div class="wrap">
+<article>
+<p class="eyebrow"><a href="/writing/">Writing</a></p>
+<h1 class="page-title">Snowflake SQL patterns for revenue reporting</h1>
+<div class="byline">
+<a class="byline-photo" href="/about/" tabindex="-1" aria-hidden="true"><img src="/img/malek-damiri-headshot.jpg" alt="Malek Damiri" width="768" height="1024" class="avatar" decoding="async"></a>
+<p class="post-meta">By <a href="/about/" rel="author">Malek Damiri</a></p>
+</div>
+<p>Most revenue reporting problems are not hard SQL. They’re the same handful of problems showing up in different tables: gaps in the calendar, days cut at the wrong midnight, duplicate records, totals that need a comparison, data that quietly stopped arriving, and two systems that disagree about the same month. I’ve settled on a small set of Snowflake patterns for them. Here they are, with generic table names. Swap in your own.</p>
+<h2>Start from a date spine</h2>
+<p>If a day had no orders, a plain <code>GROUP BY</code> leaves it out and the chart skips the day as if it never happened. Generate the calendar first and left join the facts onto it, so a quiet day shows up as zero instead of vanishing. If you already have a <code>dim_date</code> table, join to that instead of the generator. <code>SEQ4</code> can have gaps, so use <code>ROW_NUMBER</code> for the offset.</p>
+<pre><code>with spine as (
+  select dateadd(day, row_number() over (order by seq4()) - 1, '2025-01-01'::date) as report_date
+  from table(generator(rowcount =&gt; 1000))
+)
+select s.report_date,
+       coalesce(sum(o.amount_usd), 0) as revenue_usd
+from spine s
+left join orders o
+  on o.order_date = s.report_date
+where s.report_date &lt;= current_date()
+group by 1
+order by 1;</code></pre>
+<h2>Cut days in the reporting time zone</h2>
+<p>Timestamps usually arrive in UTC, and a month that closes at midnight UTC is a different month from one that closes at midnight where the business operates. Pick one reporting time zone, convert before you truncate, and do it in one shared view rather than in every dashboard. If <code>created_at</code> is a <code>TIMESTAMP_NTZ</code> holding UTC, the three-argument form of <code>CONVERT_TIMEZONE</code> does the conversion.</p>
+<pre><code>select convert_timezone('UTC', 'America/New_York', created_at)::date as order_day,
+       count(*) as orders,
+       sum(amount_usd) as revenue_usd
+from orders
+group by 1
+order by 1;</code></pre>
+<h2>Dedupe to the latest record with QUALIFY</h2>
+<p>Systems that sync by upsert or replay often land several versions of the same invoice, and a <code>SUM</code> over all of them overstates revenue by exactly the amount nobody can explain. Keep the latest version per key and drop the rest. <code>QUALIFY</code> filters on the window function directly, with no wrapping subquery, which keeps the intent visible to the next reader.</p>
+<pre><code>select *
+from invoices
+qualify row_number() over (
+  partition by invoice_id
+  order by updated_at desc, loaded_at desc
+) = 1;</code></pre>
+<h2>Running totals and period-over-period</h2>
+<p>Most executive questions are &ldquo;compared to what?&rdquo; This month against last month. This year to date against the same point last year. Aggregate to the grain you report at first, then let window functions do the comparing. One caveat: <code>LAG</code> counts rows, not months. If a month can be missing, run this on top of the spine above or the comparison will shift by a row.</p>
+<pre><code>with monthly as (
+  select date_trunc('month', trade_date)::date as report_month,
+         sum(fee_usd) as fees_usd
+  from trades
+  group by 1
+)
+select report_month,
+       fees_usd,
+       sum(fees_usd) over (
+         partition by date_trunc('year', report_month)
+         order by report_month
+       ) as fees_ytd,
+       lag(fees_usd, 1) over (order by report_month) as prior_month_usd,
+       lag(fees_usd, 12) over (order by report_month) as prior_year_usd
+from monthly
+order by report_month;</code></pre>
+<h2>A freshness check the dashboard can show</h2>
+<p>A dashboard that shows yesterday’s numbers with full confidence is worse than one that admits it’s stale. Compute freshness from the data itself, not from when the page loaded, and put the result where readers see it. Watch the time zones here too. <code>CURRENT_TIMESTAMP</code> follows the session time zone, so if <code>loaded_at</code> is stored as UTC, compare against <code>SYSDATE</code> instead, or convert one side before the subtraction.</p>
+<pre><code>with latest as (
+  select max(loaded_at) as last_loaded_at,
+         datediff('hour', max(loaded_at), current_timestamp()) as hours_since_load
+  from orders
+)
+select last_loaded_at,
+       hours_since_load,
+       iff(hours_since_load &gt; 24, 'stale', 'ok') as status
+from latest;</code></pre>
+<h2>Reconcile two systems with a FULL OUTER JOIN</h2>
+<p>When the warehouse and the ledger disagree, you want every period from both sides, including the months that exist in only one of them. An inner join hides exactly the rows you’re looking for. Use a <code>FULL OUTER JOIN</code>, <code>COALESCE</code> the keys and the amounts, and add a tolerance so you’re not chasing rounding. Anything outside the tolerance gets a written explanation.</p>
+<pre><code>with warehouse as (
+  select date_trunc('month', invoice_date)::date as report_month,
+         sum(amount_usd) as warehouse_usd
+  from invoices
+  group by 1
+),
+ledger as (
+  select date_trunc('month', posting_date)::date as report_month,
+         sum(amount_usd) as ledger_usd
+  from ledger_entries
+  group by 1
+)
+select coalesce(w.report_month, l.report_month) as report_month,
+       coalesce(w.warehouse_usd, 0) as warehouse_usd,
+       coalesce(l.ledger_usd, 0) as ledger_usd,
+       coalesce(w.warehouse_usd, 0) - coalesce(l.ledger_usd, 0) as variance_usd
+from warehouse w
+full outer join ledger l
+  on w.report_month = l.report_month
+where abs(coalesce(w.warehouse_usd, 0) - coalesce(l.ledger_usd, 0)) &gt; 1 -- tolerance in dollars
+order by 1;</code></pre>
+<p>None of these are clever, and that’s the point. The queries behind an executive dashboard should be boring enough that the next person can read them in one sitting. Put them in version control, name the CTEs plainly, and reuse the same few shapes until people stop asking how a number was built.</p>
+<nav class="related" aria-label="Related writing">
+<h2>Related</h2>
+<ul class="rows posts">
+<li><a class="label" href="/writing/teaching-yourself-sql-in-ops/">Teaching yourself SQL when your job is ops</a></li>
+<li><a class="label" href="/writing/how-to-audit-a-revenue-dashboard/">How to audit a revenue dashboard before executives use it</a></li>
+<li><a class="label" href="/writing/small-pipelines-fail-quietly/">Small pipelines fail quietly</a></li>
+</ul>
+</nav>
+<p class="post-footer">Written by <a href="/about/">Malek Damiri</a>, Head of Revenue Operations at sFOX. <a href="/writing/">More writing</a>.</p>
+</article>
+</div>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>&copy; 2026 Malek Damiri · Atlanta, Georgia</span>
+<span><a href="/photos/">Photos</a> · <a href="https://www.linkedin.com/in/malekdamiri/" rel="me noopener">LinkedIn</a></span>
+</div>
+</footer>
+</body>
+</html>

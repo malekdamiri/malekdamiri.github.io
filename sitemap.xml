@@ -100,4 +100,44 @@
     <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-bandana.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-car.jpg</image:loc></image:image>
   </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/revenue-reconciliation-operating-model/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/how-to-rebuild-an-executive-dashboard-nobody-trusts/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/how-to-define-revenue-metrics-finance-and-sales-accept/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/revops-metric-dictionary/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/pipeline-coverage-why-small-pipelines-fail-quietly/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://malekdamiri.com/writing/revenue-vs-volume-metrics/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+  </url>
 </urlset>

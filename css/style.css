@@ -241,3 +241,25 @@ object-position: 50% 0;
 border: 1px solid var(--line);
 }
 .lede + .byline { margin-top: -0.75rem; }
+
+/* Additions for posts with code samples. Append to css/style.css.
+   Uses the existing variables, so light and dark are covered. */
+pre {
+font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+font-size: 0.85rem;
+line-height: 1.55;
+background: var(--surface);
+border: 1px solid var(--line);
+border-radius: 0.6rem;
+padding: 0.9rem 1.1rem;
+margin: 0 0 1.15rem;
+overflow-x: auto;
+tab-size: 2;
+}
+pre code {
+font-size: inherit;
+background: none;
+border: 0;
+border-radius: 0;
+padding: 0;
+}
