@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Malek Damiri: writing</title>
+    <link>https://malekdamiri.com/writing/</link>
+    <description>Notes by Malek Damiri on analysis, markets, and the systems behind the numbers.</description>
+    <language>en-us</language>
+    <atom:link href="https://malekdamiri.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Volume went up and revenue went down. Here is the pandas to explain it</title>
+      <link>https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/</guid>
+      <description>Malek Damiri on splitting a revenue change into volume, mix, and rate effects in pandas, with a worked example and a chart.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>What revenue operations should own, and what it should hand off</title>
+      <link>https://malekdamiri.com/writing/what-revenue-operations-should-own/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/what-revenue-operations-should-own/</guid>
+      <description>Malek Damiri on what revenue operations should own: definitions, handoffs, and CRM design. Quotas, payouts, and data plumbing belong elsewhere.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Revenue vs. volume: the metrics that reveal actual commercial performance</title>
+      <link>https://malekdamiri.com/writing/revenue-vs-volume-metrics/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/revenue-vs-volume-metrics/</guid>
+      <description>Malek Damiri on the one-page metric set for a take-rate business: net revenue, blended rate, revenue per client, concentration, retention, and leakage.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Pipeline coverage: why small pipelines fail quietly</title>
+      <link>https://malekdamiri.com/writing/pipeline-coverage-why-small-pipelines-fail-quietly/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/pipeline-coverage-why-small-pipelines-fail-quietly/</guid>
+      <description>Malek Damiri on sales pipeline coverage: why one ratio is not enough, coverage by stage and close month, stalled deals, and fixing a short pipeline.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>The RevOps metric dictionary: definitions, owners, and source-of-truth rules</title>
+      <link>https://malekdamiri.com/writing/revops-metric-dictionary/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/revops-metric-dictionary/</guid>
+      <description>Malek Damiri on building a RevOps metric dictionary: the fields each entry needs, owners, source-of-truth rules, example entries, and keeping it alive.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>How to define revenue metrics that finance and sales both accept</title>
+      <link>https://malekdamiri.com/writing/how-to-define-revenue-metrics-finance-and-sales-accept/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/how-to-define-revenue-metrics-finance-and-sales-accept/</guid>
+      <description>Malek Damiri on revenue metrics finance and sales both accept: one owner per metric, bookings vs billings vs revenue, edge cases, and change control.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Snowflake SQL patterns for revenue reporting</title>
+      <link>https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/</guid>
+      <description>Malek Damiri on Snowflake SQL for revenue reporting: date spines, QUALIFY to dedupe, window functions, freshness checks, and ledger reconciliation.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>How to audit a revenue dashboard before executives use it</title>
+      <link>https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/</guid>
+      <description>Malek Damiri on auditing a revenue dashboard before launch: tie out to the ledger, check date boundaries, currency, duplicates, filters, and freshness.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>How to rebuild an executive dashboard nobody trusts</title>
+      <link>https://malekdamiri.com/writing/how-to-rebuild-an-executive-dashboard-nobody-trusts/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/how-to-rebuild-an-executive-dashboard-nobody-trusts/</guid>
+      <description>Malek Damiri on rebuilding an executive dashboard in six phases: stop the bleeding, interview readers, inventory every number, rebuild in code, relaunch.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Revenue reconciliation: a practical operating model for finance and sales</title>
+      <link>https://malekdamiri.com/writing/revenue-reconciliation-operating-model/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/revenue-reconciliation-operating-model/</guid>
+      <description>Malek Damiri on reconciling revenue across billing, CRM, and the warehouse: who owns each number, a monthly cadence, tolerances, and settling disputes.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>A status file for every project</title>
+      <link>https://malekdamiri.com/writing/a-status-file-for-every-project/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/a-status-file-for-every-project/</guid>
+      <description>Malek Damiri on running many analytics projects at once: a status file per project with current state, open questions, next actions, and blockers.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Small pipelines fail quietly</title>
+      <link>https://malekdamiri.com/writing/small-pipelines-fail-quietly/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/small-pipelines-fail-quietly/</guid>
+      <description>Malek Damiri on monitoring small data pipelines: check freshness and row counts, alert on absence, and treat unknown as a status.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Find the constraint before you automate</title>
+      <link>https://malekdamiri.com/writing/find-the-constraint-before-you-automate/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/find-the-constraint-before-you-automate/</guid>
+      <description>Malek Damiri on working backwards from a revenue target: funnel math, binding constraints, and why automation can speed up the wrong step.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Your average customer doesn’t exist</title>
+      <link>https://malekdamiri.com/writing/your-average-customer-does-not-exist/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/your-average-customer-does-not-exist/</guid>
+      <description>Malek Damiri on why averages mislead in revenue analysis: skewed distributions, medians, concentration, and plans built on the wrong number.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Did the client trade more, or did the market move?</title>
+      <link>https://malekdamiri.com/writing/client-or-market/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/client-or-market/</guid>
+      <description>Malek Damiri on explaining changes in client trading volume: separate market effects from client behavior before drawing conclusions.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Volume is not revenue</title>
+      <link>https://malekdamiri.com/writing/volume-is-not-revenue/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/volume-is-not-revenue/</guid>
+      <description>Malek Damiri on analyzing a trading business: why volume and revenue diverge, and how to read rate, mix, and routing.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>When pipeline doesn’t start with a form fill</title>
+      <link>https://malekdamiri.com/writing/when-pipeline-does-not-start-with-a-form/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/when-pipeline-does-not-start-with-a-form/</guid>
+      <description>Malek Damiri on sales attribution when reps prospect on LinkedIn and book meetings directly, and how to build a rep scorecard people trust.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Teaching yourself SQL when your job is ops</title>
+      <link>https://malekdamiri.com/writing/teaching-yourself-sql-in-ops/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/teaching-yourself-sql-in-ops/</guid>
+      <description>Malek Damiri on learning SQL without a data background: start with questions, do the practice problems, and distrust your first answer.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+    <item>
+      <title>Rebuilding a dashboard people have stopped trusting</title>
+      <link>https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/</link>
+      <guid isPermaLink="true">https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/</guid>
+      <description>Malek Damiri on rebuilding an executive dashboard: trace one wrong number to its source, pick one methodology, and validate it three ways.</description>
+      <dc:creator>Malek Damiri</dc:creator>
+    </item>
+  </channel>
+</rss>

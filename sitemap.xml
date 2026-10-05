@@ -2,27 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://malekdamiri.com/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/about/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
+    <loc>https://malekdamiri.com/links/</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
     <loc>https://malekdamiri.com/work/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/outside-work/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-athens.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-hiking.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-half-marathon.jpg</image:loc></image:image>
@@ -31,7 +35,7 @@
   </url>
   <url>
     <loc>https://malekdamiri.com/photos/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-athens.jpg</image:loc></image:image>
@@ -45,52 +49,52 @@
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/rebuilding-a-dashboard-people-stopped-trusting/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/teaching-yourself-sql-in-ops/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/when-pipeline-does-not-start-with-a-form/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/volume-is-not-revenue/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/client-or-market/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/your-average-customer-does-not-exist/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/find-the-constraint-before-you-automate/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/small-pipelines-fail-quietly/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/a-status-file-for-every-project/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/ben/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-on-the-coast.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-walking-ben.jpg</image:loc></image:image>
@@ -99,55 +103,61 @@
     <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-piedmont-park.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-bandana.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-car.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-indoor-selfie.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-and-ben-on-the-couch.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-watching-the-park.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-puppy-swing.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-star-toy.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/ben-goldendoodle-close-up.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/revenue-reconciliation-operating-model/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/how-to-rebuild-an-executive-dashboard-nobody-trusts/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/how-to-audit-a-revenue-dashboard/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/snowflake-sql-patterns-for-revenue-reporting/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/how-to-define-revenue-metrics-finance-and-sales-accept/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/revops-metric-dictionary/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/pipeline-coverage-why-small-pipelines-fail-quietly/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/revenue-vs-volume-metrics/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/what-revenue-operations-should-own/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/revenue-decomposition-volume-mix-rate-pandas/</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/revenue-volume-mix-rate-effects.png</image:loc></image:image>
   </url>
