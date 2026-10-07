@@ -12,21 +12,24 @@
   </url>
   <url>
     <loc>https://malekdamiri.com/links/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-navy-polo-skyline.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/work/</loc>
-    <lastmod>2026-10-04</lastmod>
-    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+    <lastmod>2026-10-07</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-glasses-black-jacket.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/writing/</loc>
-    <lastmod>2026-10-04</lastmod>
-    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
+    <lastmod>2026-10-07</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-white-shirt-city.jpg</image:loc></image:image>
   </url>
   <url>
     <loc>https://malekdamiri.com/outside-work/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-outdoors-navy-tee.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-in-the-park.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-athens.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-hiking.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-half-marathon.jpg</image:loc></image:image>
@@ -35,7 +38,14 @@
   </url>
   <url>
     <loc>https://malekdamiri.com/photos/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-07</lastmod>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-glasses-blue-shirt.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-smiling.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-glasses-black-jacket.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-white-shirt-city.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-navy-polo-skyline.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-outdoors-navy-tee.jpg</image:loc></image:image>
+    <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-in-the-park.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-headshot.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri.jpg</image:loc></image:image>
     <image:image><image:loc>https://malekdamiri.com/img/malek-damiri-athens.jpg</image:loc></image:image>
