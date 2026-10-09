@@ -1,0 +1,38 @@
+name: hackernoon-sync
+
+# Every morning, add any new HackerNoon stories to the home page and /writing/.
+on:
+  schedule:
+    - cron: "37 8 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: hackernoon-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Add new HackerNoon stories
+        run: python3 .github/hackernoon_sync.py
+      - name: Commit and publish if anything changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "No new stories."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Add new HackerNoon stories"
+          git push
+          gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds" || true
