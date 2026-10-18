@@ -1,0 +1,79 @@
+<p>Before I worked in revenue operations, I spent seven years in supply chain: transportation routing and an automated warehouse launch at PepsiCo, then scaling supply chain operations at HelloFresh. In a warehouse, nobody confuses inventory with sales. Inventory ages. Old inventory gets counted, questioned, and eventually written off.</p>
+<p>CRMs don't work that way. A deal created in February that nobody has touched since keeps its full value in the pipeline until someone closes it out, and nobody enjoys closing deals out. So the pipeline grows, coverage looks healthy, and revenue doesn't follow.</p>
+<p>There's a 65-year-old formula from operations research that tells you how much of that pipeline is real. It's called Little's Law, and it needs three numbers you already have.</p>
+<h2>L = λW</h2>
+<p>John Little published the proof in 1961. In any stable system, the average number of items inside equals the rate they arrive multiplied by the average time each one stays:</p>
+<p><strong>L = λ × W</strong></p>
+<p>A coffee shop that gets 60 customers an hour, each staying 20 minutes, has 20 people inside on average. A warehouse that receives 1,000 pallets a week and holds each for three weeks has about 3,000 pallets on the floor.</p>
+<p>It works on a pipeline, too. If you create 30 deals a week and a deal takes six weeks to resolve, won or lost, you should have about 180 open deals. Not "somewhere in that range, depending on the quarter." About 180.</p>
+<p>The useful part is when the numbers disagree.</p>
+<h2>Running the check</h2>
+<p>You need one table: deals, with a created date, a closed date (null while open), a status, and an amount. The data below is simulated: two years of about 30 new deals a week, a quarter of them won. In one version, every lost deal gets marked lost. In the other, 15% of lost deals never do. They just stay open.</p>
+<pre><code class="language-sql">-- Little's Law: open deals = deals created per week x weeks a deal stays open.
+with params as (
+  select date '2026-10-05' as today, 13 as weeks
+),
+arrivals as (          -- lambda: new deals per week, last 13 weeks
+  select count(*) / any_value(p.weeks) as per_week
+  from deals, params p
+  where created_on &gt; p.today - p.weeks * 7
+),
+cycle as (             -- W: weeks from created to closed, deals that closed in the last 13 weeks
+  select avg(closed_on - created_on) / 7.0 as weeks_open,
+         quantile_cont(closed_on - created_on, 0.9) as p90_days
+  from deals, params p
+  where closed_on &gt; p.today - p.weeks * 7
+),
+open_now as (
+  select count(*) as deals, sum(amount) as amount
+  from deals
+  where status = 'open'
+)
+select round(a.per_week, 1)                    as new_per_week,
+       round(c.weeks_open, 1)                  as avg_weeks_open,
+       round(a.per_week * c.weeks_open)        as expected_open,
+       o.deals                                 as actual_open,
+       o.deals - round(a.per_week * c.weeks_open) as unexplained,
+       c.p90_days
+from arrivals a, cycle c, open_now o;</code></pre>
+<p>The clean CRM:</p>
+<pre><code>new_per_week  avg_weeks_open  expected_open  actual_open  unexplained  p90_days
+        32.6             5.6            183          190            7      63.0</code></pre>
+<p>Little's Law predicts 183 open deals, and the CRM has 190. That's what a healthy pipeline looks like: the formula and the database agree within a few percent.</p>
+<p>The CRM where some lost deals are never closed:</p>
+<pre><code>new_per_week  avg_weeks_open  expected_open  actual_open  unexplained  p90_days
+        32.6             5.6            182          510          328      63.0</code></pre>
+<p>Same arrivals. Same speed for the deals that actually resolve. And 510 open deals where the math says 182. The 328 unexplained deals aren't slow. They aren't moving at all.</p>
+<p>[[CHART]]</p>
+<p>The trend is the part that should worry a sales leader. Over the year, open deals grew 59%, from 321 to 510. Deals won per week grew 12%. Look only at pipeline and the business seems to be accelerating. It isn't. The warehouse is filling up with stock nobody will ship.</p>
+<h2>Finding the dead deals</h2>
+<p>Little's Law tells you how many dead deals there are. Age tells you which ones. Use the 90th percentile of your real cycle time, the age by which nine out of ten deals that resolve have resolved:</p>
+<pre><code class="language-sql">-- Where the unexplained deals are: open deals by age.
+with p90 as (
+  select quantile_cont(closed_on - created_on, 0.9) as days
+  from deals
+  where closed_on &gt; date '2026-10-05' - 91
+)
+select case when date '2026-10-05' - created_on &lt;= p.days     then '1 younger than p90'
+            when date '2026-10-05' - created_on &lt;= 2 * p.days then '2 p90 to 2x p90'
+            else '3 older than 2x p90' end as age,
+       count(*)                as deals,
+       round(sum(amount), -3)  as pipeline
+from deals, p90 p
+where status = 'open'
+group by 1
+order by 1;</code></pre>
+<pre><code>age                  deals   pipeline
+1 younger than p90     193  4,284,000
+2 p90 to 2x p90         41  1,064,000
+3 older than 2x p90    276  6,426,000</code></pre>
+<p>More than half the pipeline by value, $6.4 million of $11.8 million, sits in deals more than twice as old as nearly every deal that actually closes. In the clean CRM, that bucket holds one deal.</p>
+<h2>What to do about it</h2>
+<p><strong>Write down aged pipeline.</strong> Any deal older than twice the p90 cycle time comes out of the coverage number unless a rep re-qualifies it with a next step and a date. Warehouses don't count expired stock as sellable, and they're right not to.</p>
+<p><strong>Report the Little's Law check every month.</strong> Expected open versus actual open is one line on a slide, and it's the fastest pipeline hygiene check I know. If actual drifts above expected, something is piling up.</p>
+<p><strong>Measure throughput, not just volume.</strong> Deals resolved per week is the real capacity of a sales team. Pipeline value is inventory. Pouring more inventory into a system that's already at capacity doesn't raise output. It raises W, the time everything waits.</p>
+<p>I've written before about <a href="https://malekdamiri.com/writing/pipeline-coverage-why-small-pipelines-fail-quietly/">pipeline coverage and why small pipelines fail quietly</a> when coverage is read as one number. Little's Law is the other half of that story: a big pipeline can fail quietly too, when a large share of it is already dead.</p>
+<h2>Caveats, because operations research has them</h2>
+<p>Little's Law assumes a reasonably stable system. If deal volume doubled last quarter, use a shorter window and expect noise. W here comes from deals that closed, so if your sales cycle is getting longer, it understates W a little, though nowhere near enough to explain a gap like the one above. And it's a sanity check, not an accounting rule. Use it to find the problem, then go look at the deals.</p>
+<p>The formula is 65 years old and fits on a napkin. It's still the best pipeline audit I know.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about pipelines, forecasts, and the operations math behind them at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
