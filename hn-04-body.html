@@ -1,0 +1,127 @@
+<p>Every morning, a bot posts a short report to Slack: what moved volume and revenue yesterday, driver by driver. It runs on a GitHub Actions schedule and checks its own numbers before it posts. For a small team it's a good setup. There's no server to babysit, the logs and secrets live in one place, and anyone on the team can read the run history.</p>
+<p>It's also a scheduler with fine print, and nearly all of the fine print is about the morning the report doesn't arrive. Here's what GitHub's documentation says about scheduled workflows, what it means for a daily report, and the safeguards that make up for it.</p>
+<h2>The fine print</h2>
+<p>These are all in GitHub's docs for the <code>schedule</code> event, roughly in order of how likely they are to bite.</p>
+<p><strong>Scheduled runs can be late, and some never happen.</strong> GitHub warns that scheduled runs can be delayed when Actions is under heavy load, that the start of every hour is one of those times, and that under enough load "some queued jobs may be dropped." A dropped run doesn't fail. It just doesn't happen.</p>
+<p><strong>Schedules run in UTC unless you say otherwise.</strong> Schedules now accept a <code>timezone</code> with an IANA name like <code>America/New_York</code>. Without it, a 7 AM report drifts to 6 AM or 8 AM local twice a year when daylight saving time changes. With it, a time that doesn't exist on the spring-forward day moves to the next valid time.</p>
+<p><strong>Schedules only run from the default branch</strong>, on its latest commit. Editing a workflow on a feature branch won't tell you whether its schedule works.</p>
+<p><strong>In public repositories, schedules switch off after 60 days with no repository activity.</strong> A report that just works for two months and then stops is the most frustrating version of all of this.</p>
+<p><strong>The shortest interval is five minutes.</strong> Irrelevant for a daily report, worth knowing before you build a poller on it.</p>
+<h2>The workflow</h2>
+<pre><code class="language-yaml">name: daily-report
+
+on:
+  schedule:
+    - cron: "17 7 * * *"            # 7:17, not 7:00. The top of the hour is the busiest time.
+      timezone: "America/New_York"  # without this, cron runs in UTC
+  workflow_dispatch:                 # run it by hand when the schedule doesn't
+
+concurrency:
+  group: daily-report               # a manual run and a scheduled run never overlap
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m unittest -q      # the QA rules have tests too
+      - run: python main.py
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          WAREHOUSE_DSN: ${{ secrets.WAREHOUSE_DSN }}</code></pre>
+<p>Most of those lines answer the fine print. The cron is <code>17 7</code>, not <code>0 7</code>, because the top of the hour is the busiest time, and a report at 7:17 that arrives beats one at 7:00 that doesn't. <code>workflow_dispatch</code> adds a "Run workflow" button for the mornings the schedule doesn't fire. <code>concurrency</code> stops a manual run and a late scheduled run from overlapping. And the QA rules run as tests before the report does, so a change to the rules can't quietly switch them off.</p>
+<h2>The report checks itself before it posts</h2>
+<p>A daily report should never post a number it can't defend. Before anything goes to the channel, run checks like these:</p>
+<pre><code class="language-python">@dataclass
+class Report:
+    latest_day: date            # newest day present in the source data
+    start: float                # total for the day before yesterday
+    end: float                  # yesterday's total
+    drivers: dict = field(default_factory=dict)   # what moved it, by driver
+    rows: int = 0
+    trailing_rows: float = 0    # average daily row count, last 28 days
+
+
+def qa(report, today):
+    problems = []
+    if report.latest_day &lt; today - timedelta(days=1):
+        problems.append(f"data is stale: newest day is {report.latest_day}")
+    gap = report.start + sum(report.drivers.values()) - report.end
+    if abs(gap) &gt; 1:
+        problems.append(f"drivers don't add up: off by {gap:,.0f}")
+    change = abs(report.end - report.start) or 1
+    other = abs(report.drivers.get("other", 0)) / change
+    if other &gt; 0.25:
+        problems.append(f"'other' explains {other:.0%} of the change")
+    if report.rows &lt; 0.5 * report.trailing_rows:
+        problems.append(f"only {report.rows:,} rows vs {report.trailing_rows:,.0f} on a normal day")
+    return problems</code></pre>
+<ul><li><strong>Freshness.</strong> If the newest data is older than yesterday, the source didn't load. A report on stale data looks exactly like a report on a quiet day.</li><li><strong>The bridge adds up.</strong> The drivers have to sum to the actual change, within a dollar. If they don't, the decomposition is wrong, and a wrong explanation is worse than none.</li><li><strong>"Other" stays small.</strong> If an unexplained bucket accounts for more than a quarter of the change, the report isn't explaining anything.</li><li><strong>Row counts look normal.</strong> Half the usual rows means a partial load, even when the newest date is right.</li></ul>
+<p>When a check fails, the report goes to its owner instead of the channel:</p>
+<pre><code>Not sending today's report:
+- data is stale: newest day is 2026-10-12</code></pre>
+<p>Each rule has its own unit test. A held report is a good outcome. It means the bot caught something before a room full of people did.</p>
+<h2>Don't post twice</h2>
+<p>Retries and manual reruns are good for reliability and bad for a Slack channel. Before posting, check whether today's report is already there:</p>
+<pre><code class="language-python">def already_posted(channel, marker):
+    midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    history = slack("conversations.history", channel=channel, oldest=str(midnight.timestamp()), limit=50)
+    return any(marker in m.get("text", "") for m in history["messages"])
+
+
+def run(report, today, text, channel, owner):
+    marker = f"Daily report for {today - timedelta(days=1)}"
+    if already_posted(channel, marker):
+        return "skipped: already posted today"
+    problems = qa(report, today)
+    if problems:
+        slack("chat.postMessage", channel=owner,
+              text="Not sending today's report:\n- " + "\n- ".join(problems))
+        return "held"
+    slack("chat.postMessage", channel=channel, text=f"*{marker}*\n{text}")
+    return "posted"</code></pre>
+<p>The marker is the report's own title. A rerun after a successful post does nothing, and a rerun after a held report posts normally once the data is fixed.</p>
+<h2>Watch for the morning nothing happens</h2>
+<p>None of those checks help when the run never starts. A dropped schedule doesn't fail, so nothing alerts. The answer is a second workflow that runs later and asks one question: did today's report succeed?</p>
+<pre><code class="language-yaml">name: report-watchdog
+
+on:
+  schedule:
+    - cron: "43 8 * * *"
+      timezone: "America/New_York"
+
+permissions:
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Did today's report run?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER_WEBHOOK: ${{ secrets.OWNER_WEBHOOK }}
+        run: |
+          today=$(date -u +%F)
+          runs=$(gh run list -R "$GITHUB_REPOSITORY" --workflow daily-report.yml \
+                   --status success --created "&gt;=$today" --json databaseId --jq length)
+          if [ "$runs" -eq 0 ]; then
+            curl -sS -X POST -H "Content-Type: application/json" \
+              --data "{\"text\": \"No successful daily report yet today ($today).\"}" \
+              "$OWNER_WEBHOOK"
+            exit 1
+          fi</code></pre>
+<p>It isn't perfect. The watchdog runs on the same scheduler with the same fine print, so it's a second chance, not a guarantee. For a report that really matters, have the bot ping an external heartbeat monitor when it succeeds, and let that service complain when the ping doesn't come. The principle is the same either way: alert on the absence of success, not the presence of failure.</p>
+<h2>When to move off GitHub Actions</h2>
+<p>When a report has to arrive at a specific minute, or runs often enough that a few dropped runs a month would matter, use a scheduler that makes promises: a cloud scheduler, Airflow, or a plain cron server you monitor. For one report a day that can arrive at 7:17 or 7:24 without anyone noticing, GitHub Actions is hard to beat. Just read the fine print, and build for the morning it doesn't show up.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about the automations behind revenue reporting, and what to do when they don't run, at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
