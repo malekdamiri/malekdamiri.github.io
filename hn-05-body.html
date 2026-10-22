@@ -1,0 +1,69 @@
+<p>Ask an AI agent what revenue was last month and you'll have SQL in seconds. It will run. It will return a number with two decimal places and a confident paragraph explaining it.</p>
+<p>The SQL will usually look fine. That's the problem. The mistakes that matter in revenue data don't show up when you read the query. They show up in the number, and only if you already know what the number should be.</p>
+<p>I use AI agents against a revenue warehouse most days. They're fast and genuinely useful, and they make exactly the mistakes new analysts make: the wrong time zone, the test accounts, the join that counts everything twice. The difference is supervision. A new analyst gets a few weeks of someone checking their work. An agent can be wired into a chat channel and answering the CFO by Friday.</p>
+<p>So before an agent answers questions about the numbers, make it pass an exam.</p>
+<h2>Golden questions</h2>
+<p>The exam is a short list of questions you already know the answers to. Not test cases you invent: real questions people ask, with answers that finance has already reconciled.</p>
+<p>Each question has four parts:</p>
+<ul><li><strong>The question</strong>, phrased the way a person actually asks it. "What was revenue in September?", not "sum net_amount where...".</li><li><strong>The golden answer</strong>, computed by SQL you trust, against a frozen copy of the data.</li><li><strong>A tolerance.</strong> A tenth of a percent for money, zero for counts and names.</li><li><strong>The trap it tests.</strong> Every good question has one.</li></ul>
+<p>The traps are the point. These are the ones I'd put in any revenue exam, because they're where people and models both go wrong:</p>
+<ol><li><strong>Time zone.</strong> September in which time zone? An invoice at 9 PM in New York on September 30 is October in UTC.</li><li><strong>Test and internal accounts.</strong> Every billing system has a few, and they're often the biggest "customers" by volume.</li><li><strong>Fan-out joins.</strong> Join invoices to their line items, sum the invoice amount, and every multi-line invoice is counted more than once.</li><li><strong>Refunds and credits.</strong> Gross or net? Netted in which month?</li><li><strong>Definitions.</strong> "Active customer" means something specific at your company. The model doesn't know what.</li><li><strong>Period boundaries.</strong> <code>between '2026-09-01' and '2026-09-30'</code> on a timestamp stops at midnight at the start of the 30th.</li></ol>
+<h2>A runnable exam</h2>
+<p>Here's a small version you can run. It builds a toy warehouse in DuckDB (customers, invoices, invoice lines, refunds) with one internal test account and two invoices that fall on September 30 in New York but October 1 in UTC. The whole thing is about 200 lines of Python. These are the parts that matter.</p>
+<p>A golden question looks like this:</p>
+<pre><code class="language-python">GOLDEN = {
+    "Q1": dict(
+        ask="What was net revenue in September 2026?",
+        trap="time zone, test accounts, refunds",
+        sql="""
+            with paid as (
+              select sum(i.amount_usd) as amt
+              from invoices i join customers c using (customer_id)
+              where not c.is_test
+                and (i.invoiced_at at time zone 'America/New_York')::date
+                    between date '2026-09-01' and date '2026-09-30'
+            ), refunded as (
+              select sum(r.amount_usd) as amt
+              from refunds r
+              join invoices i using (invoice_id)
+              join customers c using (customer_id)
+              where not c.is_test
+                and (r.refunded_at at time zone 'America/New_York')::date
+                    between date '2026-09-01' and date '2026-09-30'
+            )
+            select paid.amt - coalesce(refunded.amt, 0) from paid, refunded""",
+    ),
+    # ... five more
+}</code></pre>
+<p>And here's a first draft of the kind an agent writes when nobody has told it your definitions. It runs without an error:</p>
+<pre><code class="language-sql">select sum(amount_usd) from invoices
+where invoiced_at between '2026-09-01' and '2026-09-30'</code></pre>
+<p>The grader compares results, not SQL. Two queries that look nothing alike can both be right, and two that look nearly identical can be thousands of dollars apart:</p>
+<pre><code class="language-python">def grade(expected, got, tolerance=0.001):
+    if isinstance(expected, (int, float)) and isinstance(got, (int, float)):
+        return abs(got - expected) &lt;= tolerance * abs(expected)
+    return str(expected).strip().lower() == str(got).strip().lower()</code></pre>
+<p>Six questions, six first drafts:</p>
+<pre><code>Q1  FAIL  expected        91,975.00  got       116,050.00  trap: time zone, test accounts, refunds
+Q2  PASS  expected                9  got                9
+Q3  FAIL  expected        95,700.00  got       205,350.00  trap: fan-out join
+Q4  FAIL  expected    Delta Freight  got      Internal QA  trap: test accounts
+Q5  FAIL  expected         7,050.00  got         4,650.00  trap: time zone
+Q6  PASS  expected               22  got               22
+
+Score: 2/6</code></pre>
+<p>Q1 manages three mistakes in two lines. It includes the internal QA account, ignores $4,525 of refunds, and its <code>between</code> stops before the last day of the month starts. Q3 more than doubles API revenue by summing whole invoices that happen to contain an API line.</p>
+<p>Q4 is my favorite. Asked for the largest customer of the quarter, the first draft named the internal QA account. That answer would survive a code review. It would not survive a meeting.</p>
+<p>I picked these drafts to show the traps, and a well-briefed agent will do better on some of them. That's exactly why you need the exam: you can't tell which kind of agent you have by reading its SQL.</p>
+<h2>Building yours</h2>
+<p><strong>Start from numbers you've already defended.</strong> Last quarter's revenue, last month's active customers, the top ten accounts. If finance has signed off on it, it's a candidate.</p>
+<p><strong>Freeze the data.</strong> Golden answers drift when the tables underneath them change. In Snowflake, a zero-copy clone of the tables the exam touches costs almost nothing and stays put while the source moves on. Point the agent at the clone for the exam.</p>
+<p><strong>Ask the way people ask.</strong> Vague on purpose. "How did we do in Q3?" is a real question. If the agent answers an ambiguous question with a number instead of a clarifying question, that's a failure too. Grade those by hand.</p>
+<p><strong>Twenty to thirty questions is plenty.</strong> Spread them across the traps. Three questions per trap tell you more than fifty questions about one table.</p>
+<p><strong>Keep the answers away from the agent.</strong> If the golden SQL ends up in the agent's instructions or its memory, you're testing recall, not reasoning.</p>
+<p><strong>Rerun it on every change.</strong> New model, new prompt, new table, new metric definition. It's a regression test, and the score that matters is the trend.</p>
+<h2>What a failure tells you</h2>
+<p>Every failure points at missing context. Q1 and Q5 fail because nothing told the agent the business runs on New York time. Q4 fails because nothing told it about test accounts. Write those facts down where the agent will read them (a definitions file, a semantic layer, comments on the tables) and rerun. The fix is usually better context, not a better model.</p>
+<p>Then decide what a score earns. A perfect score on the money questions might earn the agent the right to answer them in a channel, with its SQL attached. A miss on any of them means a human checks its work before anyone sees it.</p>
+<p>An agent that passes your exam isn't trustworthy. It's tested. That's the most you can say about a new analyst, too.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about getting revenue numbers right, with and without AI, at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
