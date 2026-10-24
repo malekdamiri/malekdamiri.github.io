@@ -1,0 +1,115 @@
+<p>Every morning at 7:45, a job on my Mac runs a reconciliation and posts the results for the finance team. It's an ordinary LaunchAgent: a plist in <code>~/Library/LaunchAgents</code>, a Python script, and a log file.</p>
+<p>For three mornings in October, it didn't run.</p>
+<p>Nothing told me. There was no error in Slack, because the code that sends errors never started. There was no crash report. And the log file, the first place anyone looks, had nothing new in it, because the job failed before it could write a line.</p>
+<p>The only clue was a number.</p>
+<h2>Where the clue was</h2>
+<p>launchd keeps a record of every job's last exit. Ask for it:</p>
+<pre><code class="language-bash">launchctl print gui/$(id -u)/com.example.cash-recon | grep -E "runs|last exit code"</code></pre>
+<pre><code>	runs = 1
+	last exit code = 78: EX_CONFIG</code></pre>
+<p>The labels in this post are examples. For a quick look at every job, <code>launchctl list</code> shows the last exit status in its second column.</p>
+<p>78 is <code>EX_CONFIG</code> from <code>sysexits.h</code>, a configuration error. My script never exits with 78, and that's the tell: when the exit code is one your program doesn't use, your program probably never ran.</p>
+<h2>What 78 means for a LaunchAgent</h2>
+<p>Before launchd starts your program, it does some setup. It opens the files named in <code>StandardOutPath</code> and <code>StandardErrorPath</code>, changes into <code>WorkingDirectory</code>, and finds the executable. If any of that fails, your program never starts, and the job ends with 78.</p>
+<p>I wanted to know exactly which mistakes produce it, so I loaded a set of deliberately broken test jobs on macOS 26.6 and read what launchd reported:</p>
+<pre><code>what was wrong                                 last exit code
+program path doesn't exist                     78: EX_CONFIG
+WorkingDirectory doesn't exist                 78: EX_CONFIG
+log file in a folder launchd can't write to    78: EX_CONFIG
+log folder doesn't exist                       0   (launchd creates it)
+nothing; the program ran and failed            1   (the program's own code)</code></pre>
+<p>Two things surprised me. launchd happily creates a missing log folder, so that's not your problem. And a log file it can't open is fatal. Not a warning and not a quiet fallback: the whole job stops, and the error has nowhere to go.</p>
+<h2>Mine was the Desktop</h2>
+<p>My job's logs pointed at a folder on the Desktop, next to the script. The Desktop is one of the folders that macOS privacy protection (TCC) guards, along with Documents, Downloads, iCloud Drive, and removable and network volumes. When launchd isn't allowed to open a log file there, you get the same 78 as any other path it can't write to.</p>
+<p>Moving the logs to <code>~/Library/Logs</code>, which privacy protection doesn't guard, fixed it that morning. The script and its working directory still live on the Desktop and run fine. Only the files launchd opens itself had to move.</p>
+<p>One honest caveat. When I later tried to reproduce the Desktop failure on purpose, a test job I loaded from a terminal wrote to the Desktop without complaint. Privacy decisions depend on context, including which process is asking and what it has been granted, so the same plist can behave differently depending on how and when it was loaded. A folder without write permission reproduces exit 78 every time. The Desktop didn't. That inconsistency is exactly why I stopped putting anything launchd opens in a protected folder. "Works when I test it" is not the same as "works at 7:45 when nobody's watching."</p>
+<h2>Test the fix without waiting until tomorrow</h2>
+<p>The worst part of debugging a 7:45 job is the 23-hour feedback loop. You don't need it. Copy the plist, give it a new label, swap the program for something harmless, and tell it to run at load. Everything launchd sets up stays the same, so if the setup is broken, you'll see 78 in two seconds:</p>
+<pre><code class="language-bash">plutil -convert xml1 -o /tmp/test.plist ~/Library/LaunchAgents/com.example.cash-recon.plist
+plutil -replace Label -string com.example.cash-recon.test /tmp/test.plist
+plutil -replace ProgramArguments -json '["/usr/bin/true"]' /tmp/test.plist
+plutil -replace RunAtLoad -bool true /tmp/test.plist
+
+launchctl bootstrap gui/$(id -u) /tmp/test.plist
+sleep 2
+launchctl print gui/$(id -u)/com.example.cash-recon.test | grep "last exit code"
+launchctl bootout gui/$(id -u)/com.example.cash-recon.test</code></pre>
+<p><code>/usr/bin/true</code> does nothing and exits 0. If the copy still reports 78, the problem is in the setup, not your code. Fix the plist, rerun the copy, and only then touch the real job. Reload the real one with <code>launchctl bootout</code> and <code>launchctl bootstrap</code> so launchd reads the new version.</p>
+<h2>A doctor for every LaunchAgent</h2>
+<p>Once I'd found one of these, I wanted to check the rest. This script reads every plist in <code>~/Library/LaunchAgents</code>, flags the setups that end in 78, and prints each job's last exit code:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+"""Check every LaunchAgent for the problems that end in exit code 78 (EX_CONFIG).
+
+Usage: python3 launchd_doctor.py [folder]   (default: ~/Library/LaunchAgents)
+"""
+import os
+import plistlib
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+# Folders macOS privacy protection (TCC) guards. launchd may not be allowed to open files here.
+PROTECTED = [HOME / "Desktop", HOME / "Documents", HOME / "Downloads",
+             HOME / "Library" / "Mobile Documents", Path("/Volumes")]
+
+
+def short(path):
+    return str(path).replace(str(HOME), "~", 1)
+
+
+def last_exit(label):
+    out = subprocess.run(["launchctl", "print", f"gui/{os.getuid()}/{label}"],
+                         capture_output=True, text=True).stdout
+    m = re.search(r"last exit code = (.+)", out)
+    return m.group(1).strip() if m else ("never exited" if out else "not loaded")
+
+
+def problems(job):
+    found = []
+    args = job.get("ProgramArguments") or [job.get("Program", "")]
+    program = job.get("Program") or args[0]
+    if not Path(program).exists():
+        found.append(f"program not found: {short(program)}")
+    workdir = job.get("WorkingDirectory")
+    if workdir and not Path(workdir).is_dir():
+        found.append(f"working directory not found: {short(workdir)}")
+    for key in ("StandardOutPath", "StandardErrorPath"):
+        log = job.get(key)
+        if log and any(Path(log).is_relative_to(p) for p in PROTECTED):
+            found.append(f"{key} is in a protected folder: {short(log)}")
+    return found
+
+
+def main():
+    folder = Path(sys.argv[1]) if len(sys.argv) &gt; 1 else HOME / "Library" / "LaunchAgents"
+    for plist in sorted(folder.glob("*.plist")):
+        with plist.open("rb") as f:
+            job = plistlib.load(f)
+        label = job.get("Label", plist.stem)
+        status, issues = last_exit(label), problems(job)
+        flag = "!!" if issues or status.startswith("78") else "ok"
+        print(f"{flag}  {label}  (last exit: {status})")
+        for issue in issues:
+            print(f"      - {issue}")
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+<p>Run against a folder of example jobs:</p>
+<pre><code>!!  com.example.cash-recon  (last exit: not loaded)
+      - StandardOutPath is in a protected folder: ~/Desktop/recon/cash-recon.log
+      - StandardErrorPath is in a protected folder: ~/Desktop/recon/cash-recon.log
+!!  com.example.crm-sync  (last exit: 78: EX_CONFIG)
+      - program not found: /usr/local/bin/python3.11
+ok  com.example.morning-report  (last exit: 0)
+!!  com.example.weekly-export  (last exit: 78: EX_CONFIG)
+      - working directory not found: ~/jobs/old-reports</code></pre>
+<p><code>crm-sync</code> is the classic upgrade casualty: Python moved, and the plist still points at the old interpreter. <code>weekly-export</code> is a renamed folder. Both fail silently in exactly the same way mine did, and <code>cash-recon</code> gets flagged before it ever has the chance.</p>
+<h2>The real lesson: watch for silence</h2>
+<p>The fix took five minutes. Noticing took three days, because every alert I had lived inside the job, and the job never ran. A job that doesn't start can't report its own failure.</p>
+<p>What would have caught it on the first morning is a check that doesn't depend on the job at all: something separate that looks for the job's last success and complains when it's missing. It's the same principle I wrote about in <a href="https://malekdamiri.com/writing/small-pipelines-fail-quietly/">small pipelines fail quietly</a>: watch for the last success, not the last error.</p>
+<p>The short version, for every LaunchAgent you rely on:</p>
+<ul><li>Logs go in <code>~/Library/Logs</code>. Nothing launchd opens lives in Desktop, Documents, Downloads, or iCloud Drive.</li><li>Use an absolute path to the interpreter, and recheck it after every Homebrew or Python upgrade.</li><li>Test plist changes with a run-at-load copy, not by waiting for the schedule.</li><li>Something other than the job watches for the job's success.</li></ul>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about the small systems behind revenue reporting, including the ones that fail quietly, at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
