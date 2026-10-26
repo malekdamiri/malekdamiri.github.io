@@ -1,0 +1,85 @@
+<p>The fastest way to lose a finance team is to send them a number they can't click on.</p>
+<p>A dashboard shows a total. Finance wants to see how the total was built: which rows, which filter, which formula. If they can't see it, they export the data and rebuild it in Excel, and now there are two numbers and a meeting about why they differ.</p>
+<p>So a lot of what I automate for finance ships as a workbook. The detail rows sit on one sheet. The summary cells are formulas that point at them. Click a customer's revenue and you see <code>=SUMIFS(detail!$D$2:$D$7,detail!$B$2:$B$7,A2)</code>. Anyone can audit it in the tool they already trust, without asking me a thing.</p>
+<p>Generating those workbooks from Python is easy. Generating them so they're actually right takes a few extra steps that nobody mentions until something breaks.</p>
+<h2>Writing formulas with openpyxl</h2>
+<p>openpyxl writes any string that starts with <code>=</code> as a formula. Here's a small revenue workbook: invoices on a detail sheet, and a summary sheet with one <code>SUMIFS</code> per customer, a total, and a check row.</p>
+<pre><code class="language-python">def write_workbook(df, path):
+    wb = Workbook()
+    detail = wb.active
+    detail.title = "detail"
+    detail.append(list(df.columns))
+    for row in df.itertuples(index=False):
+        detail.append(list(row))
+    last = len(df) + 1  # header is row 1
+
+    summary = wb.create_sheet("summary", 0)
+    summary.append(["customer", "revenue"])
+    customers = sorted(df["customer"].unique())
+    for i, name in enumerate(customers, start=2):
+        summary.append([name, f'=SUMIFS(detail!$D$2:$D${last},detail!$B$2:$B${last},A{i})'])
+    total_row = len(customers) + 2
+    summary.append(["total", f"=SUM(B2:B{total_row - 1})"])
+    summary.append(["check", f"=B{total_row}-SUM(detail!$D$2:$D${last})"])  # must be 0
+    summary[f"A{total_row}"].font = Font(bold=True)
+    for ws in (summary, detail):
+        ws.freeze_panes = "A2"
+    wb.save(path)</code></pre>
+<p>The check row subtracts the detail total from the summary total. It should always be zero. It's there for the reviewer, and as you'll see, for the code.</p>
+<h2>Gotcha 1: openpyxl doesn't calculate anything</h2>
+<p>Open that file in Excel and every formula calculates. Read it with anything else and the formulas have no values:</p>
+<pre><code class="language-python">&gt;&gt;&gt; load_workbook("revenue_2026-09.xlsx", data_only=True)["summary"]["B5"].value
+None</code></pre>
+<p>pandas does the same thing. A total row written as a formula reads as <code>NaN</code>:</p>
+<pre><code>  customer  amount
+0     acme  1200.0
+1    birch   800.0
+2    total     NaN</code></pre>
+<p>An xlsx file stores two things for each formula cell: the formula, and the value from the last time it was calculated. openpyxl has no calculation engine, so it writes the first and not the second. Anything that reads values without recalculating, including pandas and the next script in your pipeline, sees nothing.</p>
+<h2>The fix: let LibreOffice calculate it</h2>
+<p>LibreOffice can open the file without a window, calculate every formula, and save it back with the values stored:</p>
+<pre><code class="language-bash">soffice --headless --calc --convert-to xlsx --outdir out/ revenue_2026-09.xlsx</code></pre>
+<p>After that, <code>data_only=True</code> returns <code>4335.75</code> for the total, and the formula is still there for the reviewer. Wrapped in Python:</p>
+<pre><code class="language-python">def recalculate(path, outdir):
+    """Open and re-save with LibreOffice so every formula gets a computed value."""
+    with tempfile.TemporaryDirectory() as profile:  # one profile per process: see below
+        subprocess.run(
+            ["soffice", f"-env:UserInstallation=file://{profile}", "--headless",
+             "--calc", "--convert-to", "xlsx", "--outdir", str(outdir), str(path)],
+            check=True, capture_output=True, timeout=120,
+        )
+    out = Path(outdir) / Path(path).name
+    if not out.exists():  # soffice can exit 0 without writing anything
+        raise RuntimeError(f"LibreOffice produced no file for {path}")
+    return out</code></pre>
+<p>Two details in that function exist because of the next gotcha.</p>
+<h2>Gotcha 2: run six at once and one disappears</h2>
+<p>If you build several workbooks, the obvious move is to recalculate them in parallel. Here's what happened when I converted six files at the same time with LibreOffice's default settings:</p>
+<pre><code>p1 exit=0 p2 exit=0 p3 exit=0 p4 exit=0 p5 exit=0 p6 exit=0 =&gt; files: 5</code></pre>
+<p>Six processes. Six exit codes of zero. Five files. I ran it again and got the same result.</p>
+<p>By default, every LibreOffice process uses the same user profile, and a second <code>soffice</code> that starts while another is running tries to hand its request to the one already running. You can see it in the logs: conversion messages turn up in the wrong process's output. Most requests get done. Sometimes one doesn't, and nothing in the exit code tells you.</p>
+<p>The fixes, in order of preference:</p>
+<ol><li><strong>One profile per process.</strong> <code>-env:UserInstallation=file:///some/unique/dir</code> gives each run its own profile, and they stop interfering. With that change, the same test produced six files out of six. The <code>recalculate</code> function above uses a fresh temporary directory for exactly this reason.</li><li><strong>Run them one at a time.</strong> Slower, simpler, and what I do for anything that runs unattended.</li><li><strong>Check that the output exists</strong>, whichever you choose. An exit code of zero from <code>soffice</code> means nothing crashed, not that your file is there. That's the other detail in <code>recalculate</code>.</li></ol>
+<h2>Gotcha 3: newer Excel functions need a prefix</h2>
+<p>Write <code>=XLOOKUP("b",A2:A3,B2:B3)</code> with openpyxl and Excel shows <code>#NAME?</code>. So does LibreOffice, which tells you it isn't an Excel quirk:</p>
+<pre><code>=XLOOKUP("b",A2:A3,B2:B3)          -&gt;  #NAME?
+=_xlfn.XLOOKUP("b",A2:A3,B2:B3)    -&gt;  2</code></pre>
+<p>Functions added to Excel after the original file format, such as XLOOKUP, IFS, CONCAT, and TEXTJOIN, are stored in the file with an <code>_xlfn.</code> prefix. Excel adds the prefix when you type the formula. openpyxl doesn't, so you have to.</p>
+<h2>Gotcha 4, the important one: test the numbers</h2>
+<p>The workbook exists and the formulas calculate. Are they right? A <code>SUMIFS</code> whose range stops one row short is a perfectly valid formula. So after recalculating, read the values back and compare them with the same totals computed in pandas:</p>
+<pre><code class="language-python">def verify(path, df):
+    values = load_workbook(path, data_only=True)["summary"]
+    got = {r[0]: r[1] for r in values.iter_rows(min_row=2, values_only=True)}
+    expected = df.groupby("customer")["amount"].sum().round(2).to_dict()
+    for name, amount in expected.items():
+        assert abs(got[name] - amount) &lt; 0.005, f"{name}: workbook {got[name]} vs data {amount}"
+    assert abs(got["check"]) &lt; 0.005, f"check cell is {got['check']}, not 0"
+    return got</code></pre>
+<p>If any customer is off by more than half a cent, or the check cell isn't zero, the script raises and the workbook doesn't go out. That's the real job of the check row: a reviewer can see it, and the code can enforce it.</p>
+<pre><code>before: None
+after:  {'Acme': 2260.5, 'Birch': 1775.25, 'Cedar': 300, 'total': 4335.75, 'check': 0}
+formula kept: =SUM(B2:B4)</code></pre>
+<h2>Why bother</h2>
+<p>Dashboards are good at "what's happening?" Workbooks are good at "show me." Finance asks the second question far more often, especially at month end, and especially about the numbers that move money.</p>
+<p>A workbook with live formulas answers it without a meeting. It also makes your work auditable by the people whose job is auditing, which is the fastest way I know to get them to trust a number they didn't build.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about the reporting that finance and sales both have to trust at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
