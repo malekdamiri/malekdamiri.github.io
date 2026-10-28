@@ -1,0 +1,96 @@
+<p>Every sales leader knows the rule: to hit the number, you need three times the number in pipeline. Ask where 3x comes from and you'll get a shrug, or the honest answer, which is that it assumes you close about a third of what you work.</p>
+<p>That assumption is the smaller problem. The bigger one is that 3x treats a team whose target rests on 100 deals exactly like a team whose target rests on five. Supply chain stopped making that mistake a long time ago.</p>
+<p>My first career was in supply chain. A planner deciding how much stock to hold never asks for a rule of thumb. They ask what the chance of running out is, and how much buffer it takes to bring that chance down to something the business can live with. The answer depends on how variable demand is. Smooth demand needs a small buffer. Lumpy demand, a few big orders instead of many small ones, needs a big one.</p>
+<p>A pipeline is the same problem. Here's how to answer it with numbers instead of a multiple.</p>
+<h2>What 3x actually assumes</h2>
+<p>If every deal in the pipeline had the same chance of closing this quarter, call it p, you'd book p times your pipeline on average. To book the target on average, you'd need 1/p times the target. At a one-in-three close rate, that's 3x.</p>
+<p>"On average" is doing a lot of work in that sentence. On average means you hit the number about half the time. Nobody sets a target hoping for a coin flip.</p>
+<h2>Coverage is a service level</h2>
+<p>Inventory planners call it a service level: the probability of not running out. Pick 90%, and the math tells you how much safety stock to hold above expected demand.</p>
+<p>For a pipeline, the service level is the chance of hitting the number, and the safety stock is extra pipeline. How much extra depends on how many deals the target rests on. For equal-size deals that each close independently, there's an exact answer: find the smallest pipeline where the chance of closing at least enough deals reaches 90%.</p>
+<pre><code class="language-python">def coverage_needed(k, p, service=0.9):
+    n = k
+    while binom.sf(k - 1, n, p) &lt; service:   # sf(k-1) = P(X &gt;= k)
+        n += 1
+    return n / k</code></pre>
+<p>At a 30% close rate:</p>
+<pre><code> deals in target  close rate  50% chance  90% chance
+             100         30%        3.3x        3.7x
+              20         30%        3.3x        4.2x
+               5         30%        3.2x        5.0x</code></pre>
+<p>Same close rate, same target. A team whose number rests on 100 deals needs 3.7x coverage for a 90% chance. A team whose number rests on five needs 5.0x. The 3x rule says both are fine. Neither is.</p>
+<p>[[CHART]]</p>
+<p>The chart is the whole argument. 3x buys a 90% chance only along a thin line: about a 40% close rate with 25 deals' worth of target, or a 50% close rate with three or four. At a 30% close rate, no number of deals gets you there. Teams below the line are under-covered at 3x. Teams with a high close rate and many small deals are over-covered, and probably spending more on pipeline generation than they need to.</p>
+<h2>Do it with your real pipeline</h2>
+<p>Real pipelines don't have equal deals or a single close rate. That's fine. You don't need a formula, you need two numbers per deal: its amount, and the probability it closes this quarter.</p>
+<p>Get the probability from history, not from the CRM's probability field. For each stage, take the deals that sat at that stage on the first day of past quarters and measure the share that closed by quarter end. That's the close rate the math needs.</p>
+<p>Then the expected outcome and its spread take a few lines of SQL:</p>
+<pre><code class="language-sql">-- The chance of hitting the number from the pipeline you have today.
+-- close_rate: the share of deals at each stage on day 1 of past quarters that closed by quarter end.
+with params as (
+  select 600000.0 as target                       -- what's left to book this quarter
+),
+deals as (
+  select d.amount, s.close_rate
+  from open_deals d
+  join stage_rates s using (stage)
+),
+totals as (
+  select sum(amount)                                                 as pipeline,
+         sum(amount * close_rate)                                    as expected,
+         sqrt(sum(close_rate * (1 - close_rate) * amount * amount))  as sd
+  from deals
+)
+select round(t.pipeline)                                  as pipeline,
+       round(t.pipeline / p.target, 2)                    as coverage,
+       round(t.expected)                                  as expected,
+       round(t.sd)                                        as sd,
+       round((t.expected - p.target) / t.sd, 2)           as z,
+       round(1 / (1 + exp(-1.702 * (t.expected - p.target) / t.sd)), 2) as p_hit
+from totals t, params p;</code></pre>
+<p>On a simulated pipeline of 60 deals at the start of a quarter, with $600,000 left to book:</p>
+<pre><code>pipeline  coverage  expected      sd      z  p_hit
+ 1787100      2.98    598033  189437  -0.01   0.50</code></pre>
+<p>Almost exactly 3x coverage, and a 50% chance of making the number. The <code>p_hit</code> column uses a quick approximation of the normal distribution that lands within about a percentage point of the exact value, which is plenty for a forecast meeting.</p>
+<h2>Check it by simulation</h2>
+<p>The normal approximation assumes many small, independent bets, and it gets worse when a few big deals dominate. So check it: simulate the quarter 100,000 times, flipping a weighted coin for every deal.</p>
+<pre><code class="language-python">"""Check the SQL estimate by simulating the quarter 100,000 times."""
+import numpy as np
+
+from pipeline import build
+
+TARGET = 600_000
+
+con = build()
+deals = con.sql("""select d.amount::double as amount, s.close_rate
+                   from open_deals d join stage_rates s using (stage)""").fetchnumpy()
+amount, rate = deals["amount"], deals["close_rate"]
+
+rng = np.random.default_rng(1)
+closed = rng.random((100_000, len(amount))) &lt; rate          # one row per simulated quarter
+booked = (closed * amount).sum(axis=1)
+
+print(f"coverage:            {amount.sum() / TARGET:.1f}x")
+print(f"chance of target:    {(booked &gt;= TARGET).mean():.0%}")
+print(f"P10 / P50 / P90:     {np.percentile(booked, [10, 50, 90]).round(-3)}")
+expected = amount * rate
+print(f"top 3 deals' share of the expected outcome: {np.sort(expected)[::-1][:3].sum() / expected.sum():.0%}")
+for service in (0.8, 0.9):
+    hit_at = np.percentile(booked, 100 * (1 - service))     # the number you'd hit `service` of the time
+    print(f"coverage for {service:.0%}:    {amount.sum() / hit_at:.1f}x")</code></pre>
+<pre><code>coverage:            3.0x
+chance of target:    47%
+P10 / P50 / P90:     [360000. 582000. 862000.]
+top 3 deals' share of the expected outcome: 47%
+coverage for 80%:    4.2x
+coverage for 90%:    5.0x</code></pre>
+<p>The simulation says 47%, close to the SQL. It also shows why the odds are so thin: three deals carry nearly half of the expected outcome. That's lumpy demand, and lumpy demand needs a bigger buffer. With this mix of deals, an 80% chance takes 4.2x coverage and a 90% chance takes 5.0x.</p>
+<h2>Report odds, not a multiple</h2>
+<p><strong>Report the probability.</strong> "We have a 50% chance of hitting the number" starts a very different conversation than "we're at 3x." It's also harder to argue with, because it's built from your own close rates.</p>
+<p><strong>Show P10, P50, and P90.</strong> Finance can plan around a range. A single forecast with a coverage ratio next to it hides the range inside a number nobody can interpret.</p>
+<p><strong>Choose the service level on purpose.</strong> Planners pick one by weighing the cost of running out against the cost of carrying stock. Do the same: missing the quarter has a cost, and so does generating pipeline you'll never need.</p>
+<p><strong>Name the big deals.</strong> If three deals carry half the expected outcome, the forecast is really about those three deals. Say so in the meeting.</p>
+<h2>Caveats</h2>
+<p>Deals aren't fully independent. A budget freeze or a slow month hits many of them at once, so the real spread is wider than these numbers suggest. Treat the results as optimistic and keep some buffer. Close rates differ by segment and deal size, so compute them separately if you sell to very different customers. And dead deals inflate every coverage number, which is a separate problem; I wrote about finding them with Little's Law.</p>
+<p>3x isn't wrong for everyone. It's right for a narrow kind of team, and it was probably right for whoever first said it. Your team deserves its own number.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about pipeline, forecasting, and the supply chain math that still applies at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
