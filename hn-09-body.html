@@ -1,0 +1,108 @@
+<p>Snowflake renewals have an odd shape. The contract is negotiated by people who rarely open <code>ACCOUNT_USAGE</code>. The usage comes from people who rarely see the contract. Then, a few weeks before the term ends, finance asks data a simple question: how much should we commit to next year? And data finds out it doesn't have a crisp answer.</p>
+<p>I sit between finance and data, so that question tends to land with me. These are the six queries I'd run before the call. Most need <code>ACCOUNTADMIN</code>, or a role that's been granted access to the <code>SNOWFLAKE</code> database. The two that read <code>ORGANIZATION_USAGE</code> need organization-level access.</p>
+<h2>1. Where the money actually goes</h2>
+<p>Before anything else, split spend by service. Compute is usually the biggest line, but serverless features, storage, and data transfer add up, and they don't respond to the same fixes.</p>
+<pre><code class="language-sql">-- Spend by month and service, last 12 full months.
+select date_trunc('month', usage_date)  as month,
+       rating_type,
+       service_type,
+       round(sum(usage_in_currency), 0) as spend
+from snowflake.organization_usage.usage_in_currency_daily
+where usage_date &gt;= date_trunc('month', current_date()) - interval '12 months'
+  and usage_date &lt;  date_trunc('month', current_date())
+group by 1, 2, 3
+order by 1, 4 desc;</code></pre>
+<p>Without organization access, <code>ACCOUNT_USAGE.METERING_DAILY_HISTORY</code> gives the same split in credits, grouped by <code>service_type</code>.</p>
+<h2>2. The run rate a commitment should rest on</h2>
+<pre><code class="language-sql">with monthly as (
+  select date_trunc('month', usage_date) as month,
+         sum(credits_billed)             as credits
+  from snowflake.account_usage.metering_daily_history
+  where usage_date &gt;= date_trunc('month', current_date()) - interval '12 months'
+    and usage_date &lt;  date_trunc('month', current_date())
+  group by 1
+)
+select month,
+       round(credits)                                                       as credits,
+       round(avg(credits) over (order by month rows between 2 preceding and current row) * 12)
+                                                                            as annualized_3m
+from monthly
+order by month;</code></pre>
+<p>The annualized three-month column is the number I'd anchor on. A full year of history includes months when the workload was smaller, so the last quarter is a better guide to next year than the last twelve months. Watch the trend too: if credits are growing a few percent a month, a commitment sized to today's run rate runs out early.</p>
+<p>Note the column is <code>credits_billed</code>, not <code>credits_used</code>. Cloud services are only billed when they exceed 10% of the day's warehouse usage, and <code>credits_billed</code> applies that adjustment. Plan on what you pay, not on what you use.</p>
+<h2>3. Compute you pay for while nothing runs</h2>
+<p>A warehouse bills while it's running, whether or not a query is. Snowflake now attributes warehouse compute to queries, which makes idle time measurable:</p>
+<pre><code class="language-sql">-- Idle compute: credits a warehouse burned while no query was running, last 30 days.
+select warehouse_name,
+       round(sum(credits_used_compute), 1)                as compute_credits,
+       round(sum(credits_attributed_compute_queries), 1)  as query_credits,
+       round(sum(credits_used_compute)
+             - sum(credits_attributed_compute_queries), 1) as idle_credits,
+       round(100 * (1 - sum(credits_attributed_compute_queries)
+                        / nullif(sum(credits_used_compute), 0)))  as idle_pct
+from snowflake.account_usage.warehouse_metering_history
+where start_time &gt;= current_timestamp() - interval '30 days'
+group by 1
+order by idle_credits desc;</code></pre>
+<p>Illustrative output:</p>
+<pre><code>warehouse_name  compute_credits  query_credits  idle_credits  idle_pct
+BI_WH                     727.4          291.0         436.5        60
+ETL_WH                    712.7          641.4          71.3        10</code></pre>
+<p>The usual culprit is a BI warehouse. Dashboards fire a query every few minutes, each one wakes the warehouse, and the warehouse stays up for its whole auto-suspend window after each query finishes. Check the settings:</p>
+<pre><code class="language-sql">show warehouses;
+
+select "name", "size", "auto_suspend", "min_cluster_count", "max_cluster_count"
+from table(result_scan(last_query_id()))
+order by "auto_suspend" desc nulls first;</code></pre>
+<p>An <code>auto_suspend</code> of 0 or null means the warehouse never suspends on its own. For BI and ad hoc warehouses, 60 seconds is a reasonable place to start. Every resume bills at least a minute, so going lower rarely helps, and a warehouse that suspends sooner loses its warm cache sooner, so measure before and after.</p>
+<h2>4. Who and what is using it</h2>
+<pre><code class="language-sql">-- Compute by query tag (or user), last 30 days.
+select coalesce(nullif(query_tag, ''), user_name)   as source,
+       warehouse_name,
+       count(*)                                     as queries,
+       round(sum(credits_attributed_compute), 1)    as credits
+from snowflake.account_usage.query_attribution_history
+where start_time &gt;= current_timestamp() - interval '30 days'
+group by 1, 2
+order by credits desc
+limit 15;</code></pre>
+<p>Two habits make this query far more useful. Set a query tag in every scheduled job and BI connection (<code>alter session set query_tag = 'dashboard:exec-weekly'</code>), so cost groups by purpose instead of by service account. And look for the same query running over and over: group by <code>query_parameterized_hash</code> and sort by credits. A dashboard that refreshes every 15 minutes for an audience that opens it on Mondays is a very common find.</p>
+<h2>5. Storage you pay for and never read</h2>
+<pre><code class="language-sql">-- Tables where Time Travel, Fail-safe, and clone bytes outweigh the live data.
+select table_catalog || '.' || table_schema || '.' || table_name as table_full_name,
+       is_transient,
+       deleted,
+       round(active_bytes / power(1024, 3), 1)             as active_gb,
+       round(time_travel_bytes / power(1024, 3), 1)        as time_travel_gb,
+       round(failsafe_bytes / power(1024, 3), 1)           as failsafe_gb,
+       round(retained_for_clone_bytes / power(1024, 3), 1) as clone_gb
+from snowflake.account_usage.table_storage_metrics
+where time_travel_bytes + failsafe_bytes + retained_for_clone_bytes &gt; active_bytes
+order by time_travel_bytes + failsafe_bytes + retained_for_clone_bytes desc
+limit 20;</code></pre>
+<p>The classic hit is a staging table that's truncated and reloaded every day. Each load leaves the old data behind in Time Travel, and then in Fail-safe for another seven days. Make tables like that transient, which drops Fail-safe, and shorten their <code>DATA_RETENTION_TIME_IN_DAYS</code>. Dropped tables show up here too, still billing until Fail-safe runs out.</p>
+<h2>6. The contract itself</h2>
+<pre><code class="language-sql">-- What's left on the contract, how fast it's going, and when it runs out.
+with balance as (
+  select date,
+         capacity_balance + rollover_balance as remaining,
+         on_demand_consumption_balance      as on_demand
+  from snowflake.organization_usage.remaining_balance_daily
+  where date &gt;= current_date() - interval '35 days'
+)
+select max(date)                                                as as_of,
+       max_by(remaining, date)                                  as remaining_now,
+       round((min_by(remaining, date) - max_by(remaining, date))
+             / nullif(datediff(day, min(date), max(date)), 0), 2) as burn_per_day,
+       round(max_by(remaining, date)
+             / nullif((min_by(remaining, date) - max_by(remaining, date))
+                      / nullif(datediff(day, min(date), max(date)), 0), 0)) as days_left,
+       max_by(on_demand, date)                                  as on_demand_now
+from balance;</code></pre>
+<p><code>remaining_now</code> and <code>days_left</code> tell you whether you'll run out before the term ends. <code>on_demand_now</code> tells you whether you already have: a non-zero on-demand balance means usage above your capacity is being billed at on-demand prices. This view can lag by up to 72 hours, and it isn't available to customers who buy through a reseller.</p>
+<p>If you're on track to finish the term with capacity left over, ask about rollover before you sign. Snowflake's own billing data has a <code>rollover</code> balance source for exactly this case: unused capacity carried into a renewed commitment. Whether you get it, and on what terms, is part of the negotiation.</p>
+<h2>Bringing it to the call</h2>
+<p>Order matters. Fix first, then size.</p>
+<ol><li>Queries 3, 4, and 5 find waste. Estimate what fixing it saves, because there's no reason to commit to another year of idle warehouses.</li><li>Query 2, adjusted for those savings and for planned growth, is the commitment.</li><li>Query 6 tells you where you stand. Running out early and finishing with a surplus are very different conversations.</li></ol>
+<p>Your account team will bring its own projection. Bring yours, with the queries behind it. A forecast you can rerun in front of someone is hard to argue with.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about where revenue and data costs meet at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
