@@ -1,0 +1,26 @@
+<p>Over the last two weeks I've written here about a calendar table that knows November 1 has 25 hours, a customer health score that barely beats a coin flip, a 1961 warehouse formula that finds dead deals in a CRM, a Slack report that checks its own numbers before it posts, an exam for AI agents, a macOS job that died because of where it kept its log file, and why 3x pipeline coverage is a guess.</p>
+<p>My title is Head of Revenue Operations. Very little of that shows up in a RevOps job description.</p>
+<p>I started in supply chain, moved into revenue operations, and taught myself SQL along the way. For most of that time the job looked the way people describe it: own the CRM, build the reports, run the forecast, keep sales and finance looking at the same numbers. That's still the job. But the way it gets done has changed, and I think it's changing faster than the job descriptions.</p>
+<h2>What changed</h2>
+<p>Two things, mostly.</p>
+<p><strong>The data moved into the warehouse.</strong> RevOps used to live inside the CRM and its report builder. Now the numbers that matter, from billing, product usage, payments, and the CRM itself, land in Snowflake or BigQuery. The person who reconciles them needs SQL, not a report wizard.</p>
+<p><strong>Writing code got cheap.</strong> An AI coding agent will write the script that syncs the CRM, builds the workbook, or posts the report in minutes. That's the real shift. When code is cheap, more of RevOps becomes code, and someone has to run it.</p>
+<p>Running it is the part that didn't get cheaper. A script is easy. A script that runs at 7:45 every morning for two years, survives a laptop update, posts nothing when the data is wrong, and tells someone when it didn't run at all: that's operations engineering. And it's increasingly a RevOps problem, because the scripts are about revenue and nobody else owns them.</p>
+<h2>What I'd learn now</h2>
+<p>If you work in RevOps, sales ops, or finance ops and you're wondering where to invest, here's my list, roughly in order of how often each one has saved me.</p>
+<p><strong>SQL, properly.</strong> Not just SELECT and GROUP BY. Grain, joins that duplicate rows, window functions, time zones. Most wrong numbers I've chased came down to a join or a day boundary. (<a href="https://hackernoon.com/6-snowflake-sql-patterns-that-solve-common-revenue-reporting-problems">These six Snowflake patterns</a> cover the ones I reach for every week.)</p>
+<p><strong>One scheduler, and how it fails.</strong> cron, launchd, GitHub Actions, Airflow. Pick the one you'll actually use and learn what it does when things go wrong. Every scheduler has a way to fail silently. Know yours.</p>
+<p><strong>Version control for anything that produces a number.</strong> If it ends up in front of a CFO, it goes in git. "Which version of the query made that slide?" should have an answer.</p>
+<p><strong>Testing numbers, not just code.</strong> Reconciliations, check cells, golden questions with known answers. Code that runs is not code that's right.</p>
+<p><strong>Staging and promotion.</strong> Somewhere to break things that isn't production, and a deliberate step between the two.</p>
+<p><strong>Writing definitions down.</strong> Every metric needs a written definition that sales and finance have both agreed to. It's the least technical item on this list, and the one that prevents the most arguments.</p>
+<p><strong>Working with AI agents.</strong> Give them a sandbox, an exam, and a short list of things they're never allowed to touch. Then let them do a lot of the typing.</p>
+<h2>What not to become</h2>
+<p>The risk in all of this is that RevOps turns into a shadow data engineering team: pipelines nobody else understands, a dozen scheduled jobs on one laptop, and a single person who knows how any of it works. That version is worse than not automating at all.</p>
+<p>So draw a line. Data engineering owns the platform: ingestion, the warehouse, the infrastructure everyone shares. RevOps owns the business logic and the last mile: the definitions, the reconciliations, the reports, and the small automations that move revenue numbers to the people who use them.</p>
+<p>And give the last mile an exit. When a RevOps automation becomes important enough that its failure would hurt the company, it graduates to the platform, with real monitoring, an owner on call, and a second person who understands it.</p>
+<h2>The job description hasn't caught up</h2>
+<p>Most RevOps postings still ask for CRM administration, reporting, and strong analytical skills. Those matter. But the people I see doing this job well now are also comfortable in a terminal, can read a stack trace without panic, and treat a scheduled job like a product with users.</p>
+<p>The title still says operations. More and more, the work says engineering. The people who do well will be the ones who take both words seriously.</p>
+<p>The pieces mentioned at the top, with runnable code, are on my <a href="https://hackernoon.com/u/malekdamiri">HackerNoon profile</a>.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about revenue operations and the systems behind it at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
