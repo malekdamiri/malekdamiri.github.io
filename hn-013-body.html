@@ -1,0 +1,90 @@
+<p>"Our sales cycle is 47 days" is one of those numbers that sounds precise and means very little. It's usually an average. It's usually calculated only on deals that have closed. And it's usually getting shorter every quarter, which everyone celebrates, and which is usually an illusion.</p>
+<p>The sales cycle isn't a number. It's a distribution with a long tail, and the tail is where the planning problems live. Here's how to measure it properly, including the deals that haven't closed yet.</p>
+<h2>The shape</h2>
+<p>I simulated 3,000 deals created between January 2025 and June 2026. Every deal draws its cycle time from the same distribution: a median of about 60 days and a long right tail, which is what real sales cycles look like. A few deals close in two weeks. A few take most of a year. Nothing changes over the 18 months.</p>
+<p>For deals created in the first half of 2025, nearly all of which have closed by now:</p>
+<pre><code class="language-sql">-- the full distribution for mature cohorts (created in 2025, 99% closed)
+select count(*) as deals,
+       round(avg(closed - created)) as mean_days,
+       median(closed - created) as median_days,
+       quantile_cont(closed - created, 0.25) as p25,
+       quantile_cont(closed - created, 0.75) as p75,
+       quantile_cont(closed - created, 0.90) as p90
+from deals
+where created &lt; '2025-07-01' and closed is not null;</code></pre>
+<pre><code> deals  mean_days  median_days  p25  p75   p90
+  1007       75.0         58.0 37.0 94.0 147.0</code></pre>
+<p>The mean is 75 days. The median is 58. A quarter of deals close in under 37 days and one in ten takes more than 147.</p>
+<p>Which one is "the sales cycle"? None of them alone. The mean is dragged up by the tail, so it describes almost no actual deal. The median is the typical deal. The 90th percentile is what you need for planning, because it tells you how long the slow deals take, and the slow deals are often the big ones.</p>
+<h2>The number that keeps getting better</h2>
+<p>Now the version most dashboards show: average days to close, for closed deals, by the quarter the deal was created.</p>
+<pre><code class="language-sql">-- the usual number: average days to close, for deals that have closed, by the quarter they were created
+select date_trunc('quarter', created) as cohort,
+       count(closed) as closed_deals,
+       round(avg(closed - created)) as avg_days,
+       round(median(closed - created)) as median_days
+from deals
+where closed is not null
+group by 1
+order by 1;</code></pre>
+<pre><code>    cohort  closed_deals  avg_days  median_days
+2025-01-01           494      73.0         56.0
+2025-04-01           513      77.0         58.0
+2025-07-01           493      76.0         58.0
+2025-10-01           474      70.0         58.0
+2026-01-01           422      57.0         50.0
+2026-04-01           164      39.0         38.0</code></pre>
+<p>The sales cycle appears to have dropped from 77 days to 39. Someone will put that on a slide and credit the new enablement program.</p>
+<p>It's not real. The underlying distribution never changed. Deals created in April 2026 have only had three months to close, so the only ones that have closed are the fast ones. The slow ones are still open, and a query that only looks at closed deals can't see them. Every recent cohort will always look faster than older ones, for exactly this reason. Statisticians call it right censoring.</p>
+<h2>Count the open deals properly</h2>
+<p>The fix is a technique from medical statistics called Kaplan-Meier. It was built for exactly this problem: patients who are still alive at the end of a study aren't missing data, they're evidence that survival lasts at least that long. An open deal works the same way. A deal that's been open for 80 days tells you the cycle for that deal is at least 80 days.</p>
+<p>Kaplan-Meier walks through the days in order. On each day, it asks: of the deals still open going into today, what share closed today? Multiply the "still open" shares together and you get the share of deals still open after any number of days. Open deals count in the denominator for as long as they've been open, then drop out without counting as closed.</p>
+<pre><code class="language-sql">-- Kaplan-Meier: open deals count as "still open after N days", not as missing
+with d as (
+    select date_trunc('quarter', created) as cohort,
+           coalesce(closed, date '2026-06-30') - created as days,
+           closed is not null as closed_flag
+    from deals
+),
+by_day as (
+    select cohort, days,
+           count(*) filter (where closed_flag) as closed_that_day,
+           count(*) as leaving_that_day
+    from d
+    group by 1, 2
+),
+risk as (
+    select *,
+           sum(leaving_that_day) over (partition by cohort order by days desc) as still_open_before
+    from by_day
+),
+km as (
+    select cohort, days,
+           exp(sum(ln(1 - closed_that_day / still_open_before)) over (partition by cohort order by days)) as share_open
+    from risk
+)
+select cohort,
+       min(days) filter (where share_open &lt;= 0.5) as median_days,
+       min(days) filter (where share_open &lt;= 0.1) as p90_days,
+       round(min(share_open) filter (where days &lt;= 30), 2) as open_after_30,
+       round(min(share_open) filter (where days &lt;= 90), 2) as open_after_90
+from km
+group by 1
+order by 1;</code></pre>
+<pre><code>    cohort  median_days  p90_days  open_after_30  open_after_90
+2025-01-01           57       147           0.82           0.26
+2025-04-01           58       152           0.84           0.29
+2025-07-01           59       164           0.82           0.28
+2025-10-01           60       165           0.83           0.29
+2026-01-01           60       147           0.80           0.28
+2026-04-01           60      &lt;NA&gt;           0.84           0.28</code></pre>
+<p>Now every cohort has a median of 57 to 60 days, which is the truth. The April 2026 cohort's 90th percentile is blank, because not enough time has passed to know it, and the query says so instead of guessing. That's the right behavior. A metric that admits it doesn't know yet is more useful than one that confidently reports the wrong number.</p>
+<p>The last two columns are what I'd show to a sales leader: 82% of deals are still open after 30 days and 26 to 29% are still open after 90. Those numbers are stable, easy to understand, and directly useful for planning.</p>
+<h2>Why the tail matters</h2>
+<p><strong>Forecasting.</strong> If a quarter is 90 days long and 28% of deals take longer than that, then more than a quarter of the pipeline created at the start of a quarter won't close in it. A forecast that assumes the average cycle will be consistently too optimistic about new pipeline.</p>
+<p><strong>Pipeline targets.</strong> Working backward from a bookings target, you need to know when pipeline has to exist, not just how much. If the 75th percentile is 94 days, pipeline for next quarter needs to be created this quarter.</p>
+<p><strong>Spotting stuck deals.</strong> Once a deal is older than the 90th percentile, it's in rare territory. Most deals that old are lost, not slow. That's a better threshold for a pipeline review than an arbitrary 120 days.</p>
+<p><strong>Segment comparisons.</strong> Compare medians and 90th percentiles by segment, not means. An enterprise segment with a few huge, slow deals will have a mean that says more about those deals than about the segment.</p>
+<h2>What to report</h2>
+<p>Report the median and the 90th percentile, calculated with open deals included. Report "share still open after 30 and 90 days" for anyone who finds percentiles abstract. And when someone shows a chart where the sales cycle is shrinking, check whether the recent cohorts have had time to finish before celebrating.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about pipeline, forecasting, and the statistics behind revenue numbers at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
