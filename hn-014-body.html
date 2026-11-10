@@ -1,0 +1,87 @@
+<p>A company reports 2.2% monthly churn. Someone multiplies by 12 and writes "about 26% annual churn" in the board deck. It looks like basic arithmetic. It's wrong twice, and the two errors don't cancel out.</p>
+<p>The first error is the one people half remember from school: churn compounds. The second is bigger and less well known: the customers who churn in a typical month are not the customers you had at the start of the year. In a growing business, those two groups behave very differently.</p>
+<p>Here's both, with a simulation and the SQL to get the real number.</p>
+<h2>Error one: churn compounds</h2>
+<p>If you lose 2% of customers in January, you lose 2% of a smaller base in February. Over 12 months, you keep 98% of 98% of 98%, twelve times. That's 0.98 to the 12th power, or 78.5%. Annual churn is 21.5%, not 24%.</p>
+<pre><code class="language-python">"""Monthly churn to annual: multiplying by 12 vs compounding."""
+print("monthly  x12     compounded")
+for m in (0.01, 0.02, 0.03, 0.05, 0.08):
+    print(f"{m:&gt;6.0%}  {12 * m:&gt;5.0%}  {1 - (1 - m) ** 12:&gt;9.1%}")
+
+
+def monthly_from_annual(a):
+    return 1 - (1 - a) ** (1 / 12)
+
+
+print(f"\n20% annual churn = {monthly_from_annual(0.20):.2%} a month, not {0.20 / 12:.2%}")</code></pre>
+<pre><code>monthly  x12     compounded
+    1%    12%      11.4%
+    2%    24%      21.5%
+    3%    36%      30.6%
+    5%    60%      46.0%
+    8%    96%      63.2%
+
+20% annual churn = 1.84% a month, not 1.67%</code></pre>
+<p>At low churn, the difference is small. At 5% a month, multiplying says 60% and compounding says 46%. At 8% a month, multiplying says you lose nearly every customer in a year, which isn't what happens.</p>
+<p>The same mistake runs in reverse. A contract business with 20% annual churn that divides by 12 to get a monthly figure for a lifetime value model will understate monthly churn and overstate lifetime value.</p>
+<p>So: compound, don't multiply. But that's the small error.</p>
+<h2>Error two: the wrong customers</h2>
+<p>I simulated three years of a growing subscription business. The key assumption, which matches almost every real subscription business I've looked at, is that churn falls with tenure. New customers leave at 6% a month for their first three months, 2.5% a month until they reach a year, and 1% a month after that.</p>
+<p>First, the usual monthly churn rate for 2025: customers who cancelled in a month, divided by customers active at the start of that month, averaged over the year.</p>
+<pre><code class="language-sql">-- monthly logo churn for 2025 (months 24 to 35): cancelled in the month / active at the start of the month
+with months as (select range as m from range(24, 36)),
+monthly as (
+    select m,
+           count(*) filter (where c.start_month &lt; m and (c.end_month is null or c.end_month &gt;= m)) as active_at_start,
+           count(*) filter (where c.end_month = m and c.start_month &lt; m) as cancelled
+    from months
+    cross join customers c
+    group by m
+)
+select round(avg(cancelled / active_at_start), 4) as avg_monthly_churn,
+       round(12 * avg(cancelled / active_at_start), 3) as times_12,
+       round(1 - power(1 - avg(cancelled / active_at_start), 12), 3) as compounded
+from monthly;</code></pre>
+<pre><code> avg_monthly_churn  times_12  compounded
+            0.0221     0.266       0.236</code></pre>
+<p>2.2% a month. Times 12 is 26.6%. Compounded is 23.6%.</p>
+<p>Now the question the board actually means: of the customers we had on January 1, how many had left by December 31?</p>
+<pre><code class="language-sql">-- what actually happened to the customers active on January 1, 2025
+select count(*) as active_jan_1,
+       count(*) filter (where end_month is not null) as gone_by_dec_31,
+       round(count(*) filter (where end_month is not null) / count(*), 3) as annual_churn
+from customers
+where start_month &lt; 24 and (end_month is null or end_month &gt;= 24);</code></pre>
+<pre><code> active_jan_1  gone_by_dec_31  annual_churn
+         3308             571         0.173</code></pre>
+<p>17.3%. The compounded monthly rate overstates it by six points. The multiplied rate overstates it by nine.</p>
+<p>The reason is who's in the monthly numbers. Every month, the denominator includes customers who joined recently, and recent customers churn the most. In a growing business there are always lots of them. But the January 1 cohort doesn't get any new customers during the year. It only gets older, and older customers churn less.</p>
+<p>Split the January 1 customers by how long they'd been customers:</p>
+<pre><code class="language-sql">-- the same, by tenure on January 1
+select case when 24 - start_month &lt;= 3 then 'a: 0-3 months'
+            when 24 - start_month &lt;= 12 then 'b: 4-12 months'
+            else 'c: over a year' end as tenure_on_jan_1,
+       count(*) as customers,
+       round(count(*) filter (where end_month is not null) / count(*), 3) as annual_churn
+from customers
+where start_month &lt; 24 and (end_month is null or end_month &gt;= 24)
+group by 1
+order by 1;</code></pre>
+<pre><code>tenure_on_jan_1  customers  annual_churn
+  a: 0-3 months        676         0.257
+ b: 4-12 months       1430         0.176
+ c: over a year       1202         0.121</code></pre>
+<p>Customers who'd been around for more than a year lost only 12% over the next 12 months. Customers who were brand new lost 26%. The monthly churn rate is a blend of both, weighted toward new customers because a growing business keeps adding them.</p>
+<h2>Which number is right?</h2>
+<p>They answer different questions, so each is right for something.</p>
+<p><strong>Monthly churn on the whole base</strong> tells you how much work customer success has this month and how much revenue you need to replace. It's an operational number. Use it to run the business month to month.</p>
+<p><strong>Annual churn of a starting cohort</strong> tells you how durable the customer base is. "Of the customers we had a year ago, 83% are still here" is what investors and boards are asking about. Use it for anything that sounds like a year.</p>
+<p><strong>Churn by tenure</strong> tells you where the problem is. If new-customer churn is high and mature-customer churn is low, the problem is onboarding or fit, not the product. That's a very different fix.</p>
+<p>What isn't right for anything is monthly churn times 12. It mixes a rate that's dominated by new customers with a time frame that implies the starting base. In a fast-growing business, it can overstate annual churn by half.</p>
+<h2>A note on revenue churn</h2>
+<p>Everything here applies to revenue churn too, with one more complication: customers who expand often churn less, and larger customers often churn less than small ones. So revenue churn by month and revenue retention of a starting cohort can diverge even more than logo churn. Compute both from the same cohort query, swapping a count for a sum of recurring revenue.</p>
+<h2>Annual contracts</h2>
+<p>One more trap. If customers sign annual contracts, they can only leave at renewal. A monthly churn rate on an annual-contract book measures which month the renewals happen to fall in, not how likely customers are to leave. For annual contracts, measure churn per renewal: of the contracts that came up for renewal, what share renewed. Then if you need an annual figure, that's already it.</p>
+<h2>The short version</h2>
+<p>Compound, don't multiply. Measure annual churn on a starting cohort, not by converting a monthly rate. And split by tenure, because the average hides the only thing you need to know: whether customers leave early or late.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about the metrics subscription businesses run on, and the ways they mislead, at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
