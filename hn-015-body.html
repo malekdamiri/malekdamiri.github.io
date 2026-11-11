@@ -1,0 +1,103 @@
+<p>In the 1990s, Procter &amp; Gamble looked at the orders it received for Pampers. Babies use diapers at a very steady rate, so consumer demand barely moved. But orders from distributors swung far more than sales in stores, and P&amp;G's own orders to its suppliers swung more still. Each step up the supply chain amplified the wobble below it. Researchers at Stanford named it the bullwhip effect, after the way a small flick of the wrist becomes a big crack at the end of the whip.</p>
+<p>I spent seven years in supply chain before moving into revenue operations, and sales hiring plans often look exactly like a bullwhip. Bookings move a few percent. Hiring goes from a freeze to a frenzy and back.</p>
+<h2>Why hiring amplifies</h2>
+<p>The bullwhip has a few classic causes. Two of them map straight onto sales hiring.</p>
+<p><strong>Forecasting from the latest signal.</strong> A distributor sees a big week, assumes it's the new normal, and orders for the higher rate plus a buffer. A sales leader sees a strong quarter, assumes growth will continue at that pace, and asks for headcount to match.</p>
+<p><strong>A long lead time.</strong> The longer it takes for an order to arrive, the further out you have to forecast, and the more any error gets multiplied. A new account executive takes months to find, then months more to ramp. By the time they're productive, the quarter that justified hiring them is long gone.</p>
+<p>Put those together and a small change in bookings becomes a big change in hiring. Then the hires arrive, capacity overshoots, the next plan freezes hiring, attrition eats into the team, and the cycle repeats.</p>
+<h2>A simulation</h2>
+<p>I built a small model: 24 quarters, bookings growing about 3% a quarter with random noise of about 4.5%. Each ramped rep handles a fixed amount of bookings. Hires take two quarters to ramp, and 8% of reps leave each quarter.</p>
+<p>I compared two hiring policies.</p>
+<p><strong>Chase the last quarter.</strong> Take last quarter's growth rate, project it forward over the ramp time, and hire enough to close the whole gap now. This is roughly what happens when a plan is rebuilt from the latest quarter's results.</p>
+<p><strong>Smooth and partial.</strong> Use the average growth over the last four quarters, and close a third of the gap each quarter.</p>
+<pre><code class="language-python">"""The bullwhip effect in sales hiring.
+
+Bookings demand wobbles a little each quarter. The hiring plan reacts to the latest
+quarter's growth, extrapolated forward, with a two-quarter lag before a hire is productive.
+Compare how much bookings move with how much hiring moves.
+"""
+import random
+import statistics
+
+random.seed(15)
+QUARTERS = 24
+QUOTA_PER_REP = 1.0      # productive capacity per ramped rep, in $M per quarter
+RAMP_LAG = 2             # quarters from hire to productive
+ATTRITION = 0.08         # share of reps who leave each quarter
+
+
+def run(policy):
+    demand = [20.0]
+    reps = [20.0]          # ramped reps
+    pipeline = [0.0, 0.0]  # hires still ramping, by quarter
+    hires = []
+    for q in range(1, QUARTERS):
+        demand.append(demand[-1] * (1.03 + random.gauss(0, 0.04)))
+        hire = max(0.0, policy(demand, reps[-1], pipeline))
+        hires.append(hire)
+        ramped = pipeline.pop(0)
+        pipeline.append(hire)
+        reps.append(reps[-1] * (1 - ATTRITION) + ramped)
+    return demand, hires, reps
+
+
+def chase(demand, reps, pipeline):
+    """React to last quarter's growth rate, project it out over the ramp lag, and fill the whole gap now."""
+    growth = demand[-1] / demand[-2]
+    target = demand[-1] * growth ** RAMP_LAG / QUOTA_PER_REP
+    expected = reps * (1 - ATTRITION) ** RAMP_LAG + sum(pipeline)
+    return target - expected + reps * ATTRITION
+
+
+def steady(demand, reps, pipeline):
+    """Use the average growth of the last four quarters, and close a third of the gap each quarter."""
+    window = demand[-5:]
+    growth = (window[-1] / window[0]) ** (1 / (len(window) - 1))
+    target = demand[-1] * growth ** RAMP_LAG / QUOTA_PER_REP
+    expected = reps * (1 - ATTRITION) ** RAMP_LAG + sum(pipeline)
+    return (target - expected) / 3 + reps * ATTRITION
+
+
+def cv(xs):
+    return statistics.stdev(xs) / statistics.mean(xs)
+
+
+for name, policy in (("chase last quarter", chase), ("smooth and partial", steady)):
+    random.seed(15)
+    demand, hires, reps = run(policy)
+    changes = [b / a - 1 for a, b in zip(demand, demand[1:])]
+    gap = statistics.mean(abs(r * QUOTA_PER_REP / d - 1) for r, d in zip(reps[4:], demand[4:]))
+    print(f"{name}:")
+    print(f"  bookings, quarter-on-quarter change: sd {statistics.stdev(changes):.1%}")
+    print(f"  hires per quarter: mean {statistics.mean(hires):.1f}, min {min(hires):.1f}, max {max(hires):.1f}, "
+          f"quarters with no hiring {sum(h &lt; 0.5 for h in hires)}, cv {cv(hires):.2f}")
+    print(f"  average gap between capacity and bookings: {gap:.1%}")
+    print("  hires by quarter:", " ".join(f"{h:.0f}" for h in hires))</code></pre>
+<pre><code>chase last quarter:
+  bookings, quarter-on-quarter change: sd 4.5%
+  hires per quarter: mean 3.4, min 0.0, max 11.5, quarters with no hiring 6, cv 0.98
+  average gap between capacity and bookings: 7.5%
+  hires by quarter: 7 2 2 2 4 2 6 0 12 0 0 4 0 1 5 6 6 0 3 1 10 0 4
+smooth and partial:
+  bookings, quarter-on-quarter change: sd 4.5%
+  hires per quarter: mean 3.0, min 1.8, max 4.3, quarters with no hiring 0, cv 0.23
+  average gap between capacity and bookings: 7.6%
+  hires by quarter: 3 3 2 2 2 2 3 3 4 2 2 3 3 3 3 3 4 3 4 3 4 4 4</code></pre>
+<p>Same bookings in both runs. Chasing produces a hiring plan that swings from zero to twelve. It freezes hiring in six quarters out of 23, then hires 12 in one quarter and 10 in another. Its hiring is about four times as volatile as the smooth policy's.</p>
+<p>And here's the part that matters: chasing doesn't buy a better fit. The average gap between sales capacity and bookings is 7.5% for chasing and 7.6% for the smooth policy. All that volatility, and the team is no better matched to demand.</p>
+<h2>What the swings cost</h2>
+<p>The simulation only measures capacity. Real hiring swings cost much more than the model shows.</p>
+<p><strong>Recruiting doesn't scale up instantly.</strong> A plan that calls for 12 hires in one quarter means rushed interviews and a lower bar. A plan that calls for zero means the recruiters you trained leave.</p>
+<p><strong>Onboarding cohorts of 12 are worse than cohorts of 3.</strong> Managers can't coach that many new people at once. Ramp gets longer exactly when you need it shorter.</p>
+<p><strong>Freezes cost you later.</strong> Attrition doesn't freeze. A team that stops hiring for two quarters loses reps it can't replace quickly, and the next growth quarter starts the scramble again.</p>
+<p><strong>People notice.</strong> Reps who watch a hiring frenzy followed by a freeze start wondering whether layoffs are next. That raises attrition, which makes the whole cycle worse.</p>
+<h2>How supply chain fixed it</h2>
+<p>The fixes for the bullwhip are well known, and they translate.</p>
+<p><strong>Smooth the signal.</strong> Don't plan from last quarter. Plan from a trend over four or more quarters. A single good quarter tells you very little about the next eight.</p>
+<p><strong>Close gaps partially.</strong> Supply chain planners call it a smoothing parameter: each period, close only part of the gap between target and actual. It feels slow. It's more stable, and in the simulation it's just as accurate.</p>
+<p><strong>Shorten the lead time.</strong> The bullwhip gets worse as lead time grows. Anything that cuts time to productivity, like a bench of candidates in progress, better onboarding, or hiring for ramp speed, makes the whole system less volatile.</p>
+<p><strong>Hire continuously.</strong> P&amp;G's suppliers suffered partly because orders came in big, infrequent batches. Annual hiring plans approved once a year are big batches. A steady rate of hiring, adjusted a little each quarter, is easier on everyone.</p>
+<p><strong>Share the real demand signal.</strong> The bullwhip is worst when each step only sees the orders from the step below. Recruiting should see the same bookings trend and pipeline as sales leadership, not just a headcount number that appears once a year.</p>
+<h2>The takeaway</h2>
+<p>When bookings wobble, the hiring plan shouldn't. A plan that chases the latest quarter will hire in bursts and freeze in between, and it won't match capacity to demand any better for the trouble. Use a longer view, close the gap a bit at a time, and hire at a steady pace.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about sales capacity, forecasting, and what supply chain already knows about both at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
