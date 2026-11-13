@@ -1,0 +1,85 @@
+<p>Every forecast call has a moment where a deal that was supposed to close this quarter quietly moves to next quarter. Nobody calls it a loss. The close date changes, the deal stays in the pipeline, and the weighted number barely moves.</p>
+<p>Do this enough times and the pipeline fills up with deals that are always closing next month. The question every revenue team should be able to answer, and few can, is simple: of the deals we said would close this quarter, what share actually did?</p>
+<h2>What you need</h2>
+<p>You need the history of each deal's close date. Most CRMs track field history if you turn it on, and most CRM-to-warehouse syncs can capture it. The table looks like this: deal ID, the date the close date was changed, and the new close date.</p>
+<p>From that history you can rebuild what the pipeline looked like on any past day: which deals were open, and what close date each one had at the time. That's the key. Today's close dates tell you nothing about what the forecast said three months ago.</p>
+<h2>The query</h2>
+<p>I simulated about 4,000 deals with their close-date histories. Each time a deal reaches its expected close date, it's won, lost, or pushed. Deals get a little less likely to win with each push, which is what I'd expect to see in real data and what you should check in yours. In the simulation, every deal's eventual outcome is known.</p>
+<p>For each quarter, find the deals that were open on the first day with a close date inside the quarter, and see what happened to them:</p>
+<pre><code class="language-sql">-- deals open on the first day of each quarter whose close date (as of that day) fell inside the quarter
+with quarters as (
+    select unnest(generate_series(date '2025-04-01', date '2026-04-01', interval 3 month))::date as q_start
+),
+as_of as (
+    select q.q_start, h.deal_id,
+           arg_max(h.close_date, h.changed_on) as close_date_then,
+           count(*) - 1 as pushes_so_far
+    from quarters q
+    join close_date_history h on h.changed_on &lt; q.q_start
+    group by 1, 2
+),
+in_quarter as (
+    select a.*, d.outcome, d.closed_on
+    from as_of a
+    join deals d using (deal_id)
+    where a.close_date_then &gt;= a.q_start
+      and a.close_date_then &lt; a.q_start + interval 3 month
+      and (d.closed_on is null or d.closed_on &gt;= a.q_start)    -- still open on day one
+)
+select q_start,
+       count(*) as committed_to_quarter,
+       round(avg((outcome = 'won' and closed_on &lt; q_start + interval 3 month)::int), 2) as won_in_quarter,
+       round(avg((outcome = 'lost' and closed_on &lt; q_start + interval 3 month)::int), 2) as lost_in_quarter,
+       round(avg((closed_on &gt;= q_start + interval 3 month)::int), 2) as slipped
+from in_quarter
+group by 1
+order by 1;</code></pre>
+<pre><code>   q_start  committed_to_quarter  won_in_quarter  lost_in_quarter  slipped
+2025-04-01                   604            0.25             0.34     0.40
+2025-07-01                   851            0.24             0.39     0.38
+2025-10-01                   956            0.23             0.45     0.31
+2026-01-01                   939            0.23             0.40     0.37
+2026-04-01                   957            0.21             0.45     0.34</code></pre>
+<p>Of the deals scheduled to close in a quarter, about a quarter are won in that quarter. Around 40% are lost. And a third slip to a later quarter. That last column is the one nobody looks at.</p>
+<p>The <code>arg_max(close_date, changed_on)</code> line does the time travel. For each deal, it takes the close date from the latest change made before the quarter started. Most warehouses have an equivalent: <code>max_by</code> in some, a window function with <code>row_number</code> in others.</p>
+<h2>Pushes are a signal</h2>
+<p>Next, split the same deals by how many times their close date had already moved before the quarter began:</p>
+<pre><code class="language-sql">-- the same deals, split by how many times the close date had already moved
+with quarters as (
+    select unnest(generate_series(date '2025-04-01', date '2026-04-01', interval 3 month))::date as q_start
+),
+as_of as (
+    select q.q_start, h.deal_id,
+           arg_max(h.close_date, h.changed_on) as close_date_then,
+           count(*) - 1 as pushes_so_far
+    from quarters q
+    join close_date_history h on h.changed_on &lt; q.q_start
+    group by 1, 2
+)
+select least(pushes_so_far, 3) as pushes_before_quarter,
+       count(*) as deals,
+       round(avg((d.outcome = 'won' and d.closed_on &lt; a.q_start + interval 3 month)::int), 2) as won_in_quarter,
+       round(avg((d.outcome = 'won')::int), 2) as won_ever
+from as_of a
+join deals d using (deal_id)
+where a.close_date_then &gt;= a.q_start
+  and a.close_date_then &lt; a.q_start + interval 3 month
+  and d.closed_on &gt;= a.q_start
+group by 1
+order by 1;</code></pre>
+<pre><code> pushes_before_quarter  deals  won_in_quarter  won_ever
+                     0   2361            0.30      0.37
+                     1   1053            0.19      0.24
+                     2    499            0.12      0.14
+                     3    394            0.08      0.10</code></pre>
+<p>A deal on its original close date wins in-quarter 30% of the time. After one push, 19%. After three or more, 8%. And the "won ever" column shows that pushed deals aren't just slow. Most of them never close at all.</p>
+<p>This pattern is built into the simulation, so don't take my numbers as evidence. Run the query on your own history. I'd be surprised if you don't see the same shape, but the size of the drop is what matters for your forecast, and only your data can tell you that.</p>
+<h2>What to do with it</h2>
+<p><strong>Report a slip rate every quarter.</strong> "Of the deals we expected to close this quarter, 23% won, 40% lost, and 37% slipped." It's a fact about the pipeline, not an opinion about a rep, and it's hard to argue with.</p>
+<p><strong>Discount pushed deals in the forecast.</strong> If deals with two pushes win in-quarter 12% of the time, weight them at 12%, regardless of stage. Push count is often a better predictor than stage, because stage is what the rep says and push count is what the deal did.</p>
+<p><strong>Flag repeat pushes in pipeline reviews.</strong> A deal on its third close date deserves a direct conversation: what's actually blocking it, and is it real? Many of those deals should be closed lost so they stop inflating coverage.</p>
+<p><strong>Look at who pushes.</strong> Run the slip rate by rep and by manager. Some reps set realistic dates. Some set the last day of the current quarter on every deal and move it when the quarter ends. Both behaviors are visible in the history.</p>
+<p><strong>Watch for end-of-quarter batch pushes.</strong> If a big share of pushes happen in the last week of a quarter, the close dates weren't forecasts. They were placeholders. The fix is a process conversation, not a data one.</p>
+<h2>The point</h2>
+<p>A close date is a prediction. Most CRMs only keep the latest prediction, which hides how often the earlier ones were wrong. Keep the history, measure the slip rate, and treat pushes as information. The deals that keep moving are telling you something.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about pipeline, forecasting, and the data behind them at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
