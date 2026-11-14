@@ -1,0 +1,86 @@
+<p>Almost every warehouse runs some version of ABC analysis. Rank every product by how much value it moves. The few products that make up most of the value are A items. The long tail at the bottom are C items. Then manage them differently: count A items often, keep them close to the shipping dock, watch them every day. Let C items look after themselves.</p>
+<p>It's one of the oldest ideas in operations, and plenty of revenue teams never use it on their customers. They have a coverage model, usually based on company size or a sales segment from the original deal. But they rarely rank accounts by what they actually pay, and they almost never ask how predictable each account is. Both are easy to measure, and together they tell you how to spend customer success time.</p>
+<h2>ABC in SQL</h2>
+<p>I simulated 1,200 accounts with 12 months of revenue each. Account size follows a long tail, which is what B2B revenue nearly always looks like.</p>
+<p>The method: total each account's revenue, rank from largest to smallest, and compute the running share of total revenue. Accounts in the first 80% are A, the next 15% are B, and the last 5% are C. The cutoffs are a convention, not a law. Pick ones that give you workable groups.</p>
+<pre><code class="language-sql">-- A = accounts making up the first 80% of revenue, B = the next 15%, C = the last 5%
+with totals as (
+    select account_id, sum(revenue) as revenue
+    from monthly_revenue
+    group by 1
+),
+ranked as (
+    select *,
+           -- share of total revenue held by bigger accounts than this one
+           (sum(revenue) over (order by revenue desc rows between unbounded preceding and current row) - revenue)
+             / sum(revenue) over () as share_before
+    from totals
+),
+classed as (
+    select *, case when share_before &lt; 0.80 then 'A' when share_before &lt; 0.95 then 'B' else 'C' end as abc
+    from ranked
+)
+select abc,
+       count(*) as accounts,
+       round(count(*) / sum(count(*)) over (), 3) as share_of_accounts,
+       round(sum(revenue) / sum(sum(revenue)) over (), 3) as share_of_revenue,
+       round(median(revenue)) as median_annual_revenue
+from classed
+group by abc
+order by abc;</code></pre>
+<pre><code>abc  accounts  share_of_accounts  share_of_revenue  median_annual_revenue
+  A       336              0.280              0.80                65376.0
+  B       373              0.311              0.15                16842.0
+  C       491              0.409              0.05                 4416.0</code></pre>
+<p>28% of accounts bring in 80% of revenue. The bottom 41% of accounts bring in 5%. Those numbers vary by business, but the shape almost never does.</p>
+<p>One detail in the query: <code>share_before</code> is the share of revenue held by accounts bigger than this one. Classifying on that, instead of the running total including the account itself, means the account that crosses the 80% line stays in A. Otherwise your biggest B account can be bigger than your smallest A account by a lot, which confuses everyone.</p>
+<h2>Add a second letter: XYZ</h2>
+<p>ABC tells you how much an account matters. It doesn't tell you how much attention it needs. A big account that pays exactly the same amount every month needs less watching than a mid-sized one whose usage swings wildly.</p>
+<p>Warehouses solve this with XYZ analysis. X items have steady demand, Y items vary, Z items are erratic. Measure it with the coefficient of variation: the standard deviation of monthly revenue divided by its average. For fixed subscriptions, this is mostly about expansion and contraction. For usage-based pricing, it's the whole story.</p>
+<pre><code class="language-sql">-- add X/Y/Z for how steady each account's monthly revenue is (coefficient of variation)
+with totals as (
+    select account_id,
+           sum(revenue) as revenue,
+           stddev_samp(revenue) / nullif(avg(revenue), 0) as cv
+    from monthly_revenue
+    group by 1
+),
+ranked as (
+    select *,
+           (sum(revenue) over (order by revenue desc rows between unbounded preceding and current row) - revenue)
+             / sum(revenue) over () as share_before
+    from totals
+),
+classed as (
+    select case when share_before &lt; 0.80 then 'A' when share_before &lt; 0.95 then 'B' else 'C' end as abc,
+           case when cv &lt; 0.15 then 'X' when cv &lt; 0.40 then 'Y' else 'Z' end as xyz,
+           revenue
+    from ranked
+)
+select abc,
+       count(*) filter (where xyz = 'X') as x_steady,
+       count(*) filter (where xyz = 'Y') as y_variable,
+       count(*) filter (where xyz = 'Z') as z_erratic
+from classed
+group by 1
+order by 1;</code></pre>
+<pre><code>abc  x_steady  y_variable  z_erratic
+  A       144          95         97
+  B       150         107        116
+  C       206         142        143</code></pre>
+<p>The cutoffs here (under 0.15 is X, under 0.40 is Y, the rest Z) are a starting point. In the simulation, volatility is independent of size, so each row splits the same way. In real data, it usually isn't. Large accounts on annual contracts are often steady, and small usage-based accounts are often erratic. Your matrix will be lopsided, and the lopsided parts are the interesting ones.</p>
+<h2>What each cell means</h2>
+<p>Nine cells is a lot to manage, but they collapse into a few coverage rules.</p>
+<p><strong>AX: big and steady.</strong> The core of the business. Named owner, regular business reviews, renewal planning well ahead. These accounts rarely surprise you, so the risk is complacency.</p>
+<p><strong>AZ: big and erratic.</strong> The most important cell, and usually the smallest. These accounts move your revenue number month to month. They need an owner who watches usage weekly and knows why it moved. Every forecast error you can't explain probably lives here.</p>
+<p><strong>AY and BZ: watch closely.</strong> Real money, real variation. Pooled coverage with alerts on big swings.</p>
+<p><strong>BX and BY: the middle.</strong> Pooled coverage, scaled programs, a named contact for escalations.</p>
+<p><strong>C anything: digital first.</strong> Good onboarding, help docs, automated health alerts, in-product messages. Not because these customers don't matter, but because no human team can give 491 small accounts personal attention profitably. CZ accounts that suddenly grow are expansion leads, so route those alerts to sales.</p>
+<h2>Things to watch</h2>
+<p><strong>Reclassify regularly.</strong> Warehouses rerun ABC monthly or quarterly. Accounts grow and shrink. An account that moved from C to A should get a named owner before the renewal, not after.</p>
+<p><strong>Use forward-looking value if you have it.</strong> ABC on last year's revenue misses accounts that are about to be big. If you have a reliable expansion signal, blend it in. But start with actual revenue, because everybody trusts it.</p>
+<p><strong>Don't hide accounts behind the letter.</strong> A C account that's a well-known logo or a design partner might deserve more attention than its revenue suggests. Make exceptions explicit and keep a list, so they don't quietly become the rule.</p>
+<p><strong>Share it.</strong> Put the letters in the CRM. When sales, support, and customer success all see AZ next to an account name, they all know it's one to handle carefully.</p>
+<h2>Why this works</h2>
+<p>The best thing about ABC analysis is that it's boring. Anyone can understand it, it takes one query, and it settles arguments about coverage with numbers instead of opinions. Warehouses have run on it for decades because attention is limited and value is concentrated. Both are just as true for customers.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about customer analytics and the supply chain ideas that work on revenue at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
