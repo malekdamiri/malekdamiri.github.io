@@ -1,0 +1,59 @@
+<p>Net revenue retention became the favorite SaaS metric for a good reason. It answers a big question in one number: if you stopped selling to new customers today, would revenue from your existing customers grow or shrink? Above 100%, it grows. Investors love it, and so do boards.</p>
+<p>But NRR adds two very different things together. It takes the revenue you lost from customers who left or cut back, and offsets it with revenue you gained from customers who expanded. A company can lose a sixth of its revenue base every year and still report a healthy NRR, as long as a few customers expand enough to cover it.</p>
+<p>That's why I ask for gross revenue retention first. GRR is the same calculation with expansion taken out. It can't go above 100%. It tells you how much of last year's revenue you kept.</p>
+<h2>The two formulas</h2>
+<p>Take every account that was paying you a year ago. Compare what they paid then with what they pay now.</p>
+<ul><li><strong>NRR</strong> = what those accounts pay now, divided by what they paid then.</li><li><strong>GRR</strong> = the same, but each account's current revenue is capped at what it paid a year ago. Expansion doesn't count. Churn and contraction do.</li></ul>
+<p>In SQL, the difference is one <code>least()</code>:</p>
+<pre><code class="language-sql">-- accounts active a year ago, and what they pay now
+select company,
+       round(sum(arr_end) / sum(arr_start), 3) as nrr,
+       round(sum(least(arr_end, arr_start)) / sum(arr_start), 3) as grr,
+       round(sum(greatest(arr_end - arr_start, 0)) / sum(arr_start), 3) as expansion,
+       round(sum(arr_start - arr_end) filter (where arr_end = 0) / sum(arr_start), 3) as churned,
+       round(sum(arr_start - arr_end) filter (where arr_end &gt; 0 and arr_end &lt; arr_start) / sum(arr_start), 3) as contracted
+from arr
+group by company
+order by company;</code></pre>
+<h2>Two companies, one NRR</h2>
+<p>I simulated two companies with 800 accounts each.</p>
+<pre><code>  company   nrr   grr  expansion  churned  contracted
+ Leaky Co 1.072 0.824      0.247    0.157       0.019
+Steady Co 1.067 0.958      0.109    0.033       0.008</code></pre>
+<p>Their NRR is almost identical: 107% and 107%. On a slide, they're the same company.</p>
+<p>They aren't. Steady Co keeps 96% of its revenue each year and grows modestly on top of that. Leaky Co loses 16% of its revenue base to churn, plus another 2% to contraction, and makes it up with 25% expansion from a minority of accounts.</p>
+<p>Leaky Co's NRR is real. Nobody made a mistake. It's just describing a much riskier business.</p>
+<h2>Why the gross number matters</h2>
+<p><strong>Expansion is less reliable than retention.</strong> Customers who are happy and staying put tend to stay put next year too. Expansion depends on budget cycles, new projects, and a handful of buyers deciding to buy more. It's lumpy, and it can stop.</p>
+<p>To see how lumpy, check how much of each company's expansion came from its ten largest expansions, and what NRR would have been if those ten accounts had simply renewed flat:</p>
+<pre><code class="language-sql">-- how much of each company's expansion came from its 10 biggest expansions,
+-- and what NRR would be if those 10 hadn't expanded
+with e as (
+    select company, account_id, arr_start, arr_end,
+           greatest(arr_end - arr_start, 0) as expansion,
+           row_number() over (partition by company order by greatest(arr_end - arr_start, 0) desc) as rnk
+    from arr
+)
+select company,
+       round(sum(expansion) filter (where rnk &lt;= 10) / sum(expansion), 2) as top10_share_of_expansion,
+       round(sum(case when rnk &lt;= 10 then least(arr_end, arr_start) else arr_end end) / sum(arr_start), 3) as nrr_without_top10
+from e
+group by company
+order by company;</code></pre>
+<pre><code>  company  top10_share_of_expansion  nrr_without_top10
+ Leaky Co                      0.45              0.959
+Steady Co                      0.26              1.039</code></pre>
+<p>Nearly half of Leaky Co's expansion came from ten accounts out of 800. Without them, its NRR drops below 100%. Steady Co barely notices: it's still at 104%.</p>
+<p><strong>Churn compounds.</strong> A company with 82% GRR has to replace almost a fifth of its revenue every year before it can grow at all. That's a big tax on the sales team, and it gets bigger as the company grows.</p>
+<p><strong>GRR points at a fix. NRR doesn't.</strong> When NRR drops, you have to ask whether churn rose or expansion fell, and the answer leads to completely different teams. GRR isolates the first question. If GRR is falling, look at onboarding, product fit, support, and customer success. If GRR is steady and NRR is falling, it's an expansion problem.</p>
+<h2>How to report them</h2>
+<p><strong>Show GRR and NRR side by side, always.</strong> One without the other is half the story. The gap between them is your expansion rate, which is worth seeing on its own.</p>
+<p><strong>Break GRR into churn and contraction.</strong> Losing whole customers and losing part of a customer have different causes. The query above already splits them.</p>
+<p><strong>Show expansion concentration.</strong> If a handful of accounts drive most of the expansion, say so. It tells everyone how fragile NRR is.</p>
+<p><strong>Measure on the same cohort.</strong> Both metrics should be calculated on accounts that were active at the start of the period. New customers acquired during the year don't belong in either. That's the most common way these numbers get inflated.</p>
+<p><strong>Use the same revenue definition.</strong> Recurring revenue only. One-time fees, services, and usage overages that don't recur should be out, or reported separately, or both numbers become hard to interpret.</p>
+<h2>What's a good GRR?</h2>
+<p>It depends on who you sell to. Businesses selling to small companies see more churn, because small companies go out of business, change tools, and cut costs quickly. Enterprise software usually retains more. Rather than chase a benchmark, track your own trend and break it down by segment. A GRR that's slowly falling is a warning, even if NRR still looks great.</p>
+<h2>The short version</h2>
+<p>NRR tells you whether your customer base is growing. GRR tells you whether it's leaking. Ask for the leak first, because expansion can hide it for a long time, and stop hiding it very suddenly.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about SaaS metrics and what they hide at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
