@@ -1,0 +1,57 @@
+<p>CAC payback is supposed to answer a simple question: when we spend money to win a customer, how long until we get it back? It's one of the most quoted numbers in a SaaS board deck, and one of the easiest to flatter.</p>
+<p>The usual formula is sales and marketing spend divided by the new monthly recurring revenue it brought in. Spend $8.5 million, win $515,000 of new MRR, and payback is 16.5 months. Clean, simple, and in this example, off by almost half.</p>
+<h2>Three things the shortcut leaves out</h2>
+<p><strong>Gross margin.</strong> Revenue isn't what pays back the spend. Gross profit is. If it costs you 25 cents to deliver each dollar of subscription, through hosting, support, and onboarding, then only 75 cents of each dollar is available to pay back acquisition. Dividing by revenue instead of gross profit shortens payback by a quarter.</p>
+<p><strong>Churn.</strong> The shortcut assumes every new customer pays the same amount every month until the spend is recovered. Some of them leave. A cohort that loses 2.5% of its customers a month has lost about a quarter of them by the end of year one, and the remaining ones have to pay back the whole acquisition cost.</p>
+<p><strong>Timing.</strong> Spend in a quarter doesn't only produce customers in that quarter. If your sales cycle is three months, this quarter's spend mostly produces next quarter's customers. Dividing this quarter's spend by this quarter's new MRR mixes up two different cohorts. When spend is ramping up, that makes payback look worse than it is. When spend has just been cut, it makes payback look better, right when people are watching it most closely.</p>
+<h2>The shortcut</h2>
+<p>I simulated a cohort of 300 new customers, about $1,500 a month at the median, acquired with $8.5 million of fully loaded sales and marketing spend. They churn at 2.5% a month, and some expand at each anniversary.</p>
+<pre><code class="language-sql">-- the usual shortcut: spend divided by new MRR, in months
+with new_mrr as (select sum(mrr) as mrr from cohort_mrr where month = 1)
+select round(s.amount / n.mrr, 1) as months_no_margin,
+       round(s.amount / (n.mrr * 0.75), 1) as months_with_75pct_margin
+from new_mrr n, spend s;</code></pre>
+<pre><code> months_no_margin  months_with_75pct_margin
+             16.5                      22.0</code></pre>
+<p>16.5 months on revenue. 22 months once you account for a 75% gross margin. Already a big difference, and we haven't touched churn yet.</p>
+<h2>The cohort version</h2>
+<p>The honest way is to follow the actual customers. Add up the gross profit they produce each month, keep a running total, and find the month when it passes the acquisition cost.</p>
+<pre><code class="language-sql">-- the version finance will accept: cumulative gross profit from the actual cohort, month by month
+with monthly as (
+    select month, sum(mrr) * 0.75 as gross_profit, count(*) as customers
+    from cohort_mrr
+    group by month
+),
+running as (
+    select month, customers,
+           sum(gross_profit) over (order by month) as cumulative_gp
+    from monthly
+)
+select r.month, r.customers, round(r.cumulative_gp) as cumulative_gp,
+       round(r.cumulative_gp / s.amount, 2) as share_of_cac_recovered
+from running r, spend s
+where r.month in (12, 18, 24, 30, 36, 48)
+   or r.month = (select min(month) from running, spend where cumulative_gp &gt;= amount)
+order by r.month;</code></pre>
+<pre><code> month  customers  cumulative_gp  share_of_cac_recovered
+    12        212      3909255.0                    0.46
+    18        185      5543100.0                    0.65
+    24        160      6936060.0                    0.82
+    30        140      8241435.0                    0.97
+    32        130      8621213.0                    1.01
+    36        123      9325868.0                    1.10
+    48         83     11042558.0                    1.30</code></pre>
+<p>The cohort pays back in month 32. Not 16.5, not 22. By then only 130 of the 300 customers are still paying. And after four years the cohort has returned 1.3 times its acquisition cost in gross profit. That's still a profitable cohort, but the business case looks very different at 32 months than at 16.</p>
+<h2>Why this matters</h2>
+<p><strong>Cash.</strong> Payback is a cash question. A company that thinks it recovers acquisition spend in 16 months will plan its fundraising and burn around that. If it's really 32 months, it runs out of money a year earlier than planned.</p>
+<p><strong>Spending decisions.</strong> Many companies set a payback threshold, often 12 to 24 months, to decide whether to spend more on acquisition. With the shortcut, this cohort looks fine. With the cohort method, it's well outside most thresholds.</p>
+<p><strong>Channel comparisons.</strong> Different channels bring in customers who churn at different rates. The shortcut ignores churn, so it favors channels that bring in lots of revenue fast, even when those customers leave quickly.</p>
+<h2>How to do it properly</h2>
+<p><strong>Use fully loaded spend.</strong> Salaries, commissions, tools, and marketing programs for both sales and marketing, not just ad spend. If you leave out the people, payback looks fantastic and means nothing.</p>
+<p><strong>Use gross margin from the income statement.</strong> Ask finance for the actual subscription gross margin, not a target. Use the same number across cohorts so they're comparable.</p>
+<p><strong>Lag the spend.</strong> Match spend to the customers it produced. A simple approach is to shift spend forward by your median sales cycle. Better still, assign spend to cohorts by when the deals were created.</p>
+<p><strong>Track cohorts, don't estimate them.</strong> For older cohorts, you have actual months of revenue, so use them. For recent cohorts, you'll have to project. Use the retention curve from older cohorts, and mark projected months clearly in the report.</p>
+<p><strong>Report the shortcut too, labeled.</strong> People will keep asking for the familiar number. Give it to them, next to the cohort number, with a note on the difference. The gap between the two is a lesson in itself.</p>
+<h2>What finance will ask</h2>
+<p>When you bring this to the finance team, expect three questions. Is the spend fully loaded? Is the margin the real one? Does the cohort include customers who churned? If you can say yes to all three, they'll trust the number. And so will whoever reads the board deck.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about SaaS metrics and the gaps between the formula and the cash at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
