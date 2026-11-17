@@ -1,0 +1,61 @@
+<p>In supply chain, nobody orders a part on the day they need it. Every part has a lead time, the gap between placing the order and having the part on the shelf, and every plan works backward from it. If a supplier needs ten weeks, you order ten weeks before you need the part. If you forget, the production line stops, and everyone learns the lead time the hard way.</p>
+<p>Sales capacity has a lead time too. It's just split into two pieces that are tracked by different teams. Recruiting tracks time to fill: from opening a req to a signed offer and a start date. Sales leadership tracks ramp: from a rep's first day to full productivity. Add them together and you get the real lead time for capacity, which is usually much longer than anyone plans for.</p>
+<h2>The model</h2>
+<p>Here's a deliberately simple version. It takes two months to fill a role. A new rep produces nothing in their first month, 10% of a ramped rep's output in the second, then 25%, 50%, and 75%, and is fully ramped from month six. Your numbers will differ, and you should measure them, but the shape is typical.</p>
+<pre><code class="language-python">"""Sales capacity with hiring lead time and ramp. Capacity is in 'ramped rep' equivalents."""
+FILL_MONTHS = 2                                  # from opening the req to the rep's first day
+RAMP = [0.0, 0.10, 0.25, 0.50, 0.75]             # productivity in months 1 to 5, then 100%
+
+
+def productivity(month_of_tenure):
+    return RAMP[month_of_tenure - 1] if month_of_tenure &lt;= len(RAMP) else 1.0
+
+
+# 1. what one departure costs
+lost = FILL_MONTHS + sum(1 - r for r in RAMP)
+print(f"capacity lost per departure: {lost:.1f} rep-months")
+team, annual_attrition = 25, 0.30
+departures = team * annual_attrition
+print(f"{team} reps, {annual_attrition:.0%} attrition: {departures:.1f} departures, "
+      f"{departures * lost:.0f} rep-months lost = {departures * lost / 12:.1f} reps "
+      f"({departures * lost / 12 / team:.0%} of the team)\n")
+
+
+# 2. when do new reqs turn into capacity? 10 new reqs, opened in different months, against a July target
+def capacity_by_month(req_month, reqs=10, months=12):
+    start = req_month + FILL_MONTHS
+    return [reqs * productivity(m - start + 1) if m &gt;= start else 0.0 for m in range(1, months + 1)]
+
+
+names = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+print("reqs opened   " + " ".join(f"{n:&gt;4}" for n in names) + "   rep-months by Dec")
+for opened in (1, 3, 5, 7):
+    cap = capacity_by_month(opened)
+    print(f"{names[opened - 1]:12s}  " + " ".join(f"{c:&gt;4.1f}" for c in cap) + f"   {sum(cap):6.1f}")</code></pre>
+<h2>What one departure costs</h2>
+<pre><code>capacity lost per departure: 5.4 rep-months
+25 reps, 30% attrition: 7.5 departures, 40 rep-months lost = 3.4 reps (14% of the team)</code></pre>
+<p>When a ramped rep leaves, you don't lose one month of capacity while you find a replacement. You lose two months of vacancy, plus 3.4 months' worth of the gap between the new rep's output and a ramped rep's. That's 5.4 months of a full rep's output for every departure, and that's assuming the backfill req opens the day they leave.</p>
+<p>On a team of 25 with 30% annual attrition, which isn't unusual for sales, that adds up to 40 rep-months a year. The team has 25 people on paper and about 21.6 reps' worth of capacity in practice. If the plan assumes 25 ramped reps, it's 14% short before the year starts.</p>
+<h2>When the req opens matters more than how many</h2>
+<p>Now say the plan needs ten more reps' worth of capacity from July, when a new product or territory opens up. The table shows the capacity those ten reqs produce each month, depending on when they're opened:</p>
+<pre><code>reqs opened    Jan  Feb  Mar  Apr  May  Jun  Jul  Aug  Sep  Oct  Nov  Dec   rep-months by Dec
+Jan            0.0  0.0  0.0  1.0  2.5  5.0  7.5 10.0 10.0 10.0 10.0 10.0     66.0
+Mar            0.0  0.0  0.0  0.0  0.0  1.0  2.5  5.0  7.5 10.0 10.0 10.0     46.0
+May            0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  2.5  5.0  7.5 10.0     26.0
+Jul            0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  2.5  5.0      8.5</code></pre>
+<p>To have ten fully ramped reps in July, you had to open the reqs in January. Open them in March and you have a quarter of the capacity in July and full capacity in October. Open them in July, when the plan says the capacity is needed, and you get 8.5 rep-months for the whole year instead of the 60 the plan assumed.</p>
+<p>The plan wasn't wrong about how many people it needed. It was wrong about when to order them.</p>
+<h2>Why this keeps happening</h2>
+<p><strong>The budget and the need are dated the same.</strong> Annual plans often approve headcount "for the second half." Finance releases it in July. But second-half capacity needs first-half hiring.</p>
+<p><strong>Ramp is invisible in the capacity plan.</strong> Many plans count heads, not productive capacity. A rep in their second month counts the same as a five-year veteran.</p>
+<p><strong>Backfills start late.</strong> A rep resigns, gives two weeks' notice, and the backfill req goes through approval after they leave. Every week of delay adds directly to the 5.4 months.</p>
+<p><strong>Ramp assumptions are optimistic.</strong> Ramp curves in plans are usually set by people who remember their own best hires. Measure them from actual data: bookings by tenure month, for every rep hired in the last two years.</p>
+<h2>Planning like a supply chain</h2>
+<p><strong>Plan capacity in ramped-rep equivalents.</strong> Multiply each rep by their productivity for their tenure. That's your real capacity, and it's what bookings targets should be based on.</p>
+<p><strong>Order ahead by the full lead time.</strong> Work backward from when capacity is needed: subtract ramp time and time to fill. For the numbers above, that's about six months.</p>
+<p><strong>Hold safety stock for attrition.</strong> Planners keep a buffer of inventory for supply disruptions. Hire a few reps above the plan, continuously, to cover the departures you know are coming. With 30% attrition, a 25-person team needs about three reps of buffer just to stand still.</p>
+<p><strong>Shorten the lead time.</strong> Every month cut from time to fill or ramp improves capacity directly. Keeping a bench of interviewed candidates, opening backfills on notice instead of on departure, and investing in onboarding all pay off in the same units: rep-months.</p>
+<p><strong>Measure the lead time.</strong> Track time to fill and the actual ramp curve every quarter. Lead times change, and a plan built on last year's numbers will be wrong in the same direction as last year's plan.</p>
+<p>The math is simple, and it's the same math every warehouse does. Capacity you need in July has to be ordered in January.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about sales capacity planning and the supply chain thinking behind it at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
