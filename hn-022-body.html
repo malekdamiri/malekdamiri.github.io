@@ -1,0 +1,55 @@
+<p>Ask a revenue team how accurate its forecast is and there's a decent chance the answer is a MAPE: mean absolute percentage error. Take each forecast, measure how far off it was as a percentage of the actual, and average those percentages.</p>
+<p>MAPE is popular because it's easy to explain. "We're off by 20% on average" sounds like a clear statement. But MAPE has three problems that make it a poor way to grade a revenue forecast, and demand planners moved away from it for exactly these reasons. Here they are, and what to use instead.</p>
+<h2>Problem one: small numbers dominate</h2>
+<p>MAPE gives every forecast the same weight, whatever its size. A $900,000 enterprise forecast that's off by 15% counts exactly as much as a $15,000 forecast for a new region that's off by 70%.</p>
+<p>I simulated a year of monthly forecasts for five segments. The new region is less than 1% of bookings, and, like most small and new segments, it's noisy.</p>
+<pre><code class="language-sql">-- MAPE averages percentage errors, so every segment-month counts the same
+-- WAPE divides total absolute error by total actuals, so errors count in dollars
+-- bias says which way the errors lean
+select segment,
+       round(avg(abs(forecast - actual) / nullif(actual, 0)), 3) as mape,
+       round(sum(abs(forecast - actual)) / sum(actual), 3) as wape,
+       round(sum(forecast - actual) / sum(actual), 3) as bias
+from forecasts
+group by rollup (segment)
+order by sum(actual) desc;</code></pre>
+<pre><code>   segment  mape  wape   bias
+       NaN 0.296 0.193 -0.052
+Enterprise 0.152 0.162 -0.096
+Mid-market 0.216 0.213 -0.050
+       SMB 0.236 0.221  0.050
+  Partners 0.235 0.210  0.069
+New region 0.671 0.575 -0.127</code></pre>
+<p>The first row is the total (<code>rollup</code> adds it, with a blank segment). Overall MAPE is 29.6%. Without the new region, it would be 21%. A segment that's 0.8% of bookings adds almost nine points to the headline accuracy number. Whoever owns the forecast will spend the next quarter explaining a number that's mostly about a segment that doesn't matter yet.</p>
+<h2>Problem two: it breaks at zero</h2>
+<p>The new region booked nothing in February. The percentage error for that month is a forecast divided by zero, which is undefined. The query handles it with <code>nullif</code>, which quietly drops the month. Other tools return an error or infinity. None of those is right: a month where you forecast $13,200 and booked nothing is a real miss, and it should count.</p>
+<p>Revenue has lots of zeros. New products, new regions, small segments, and individual reps all have months with nothing booked. Any metric that can't handle zero is a bad fit.</p>
+<h2>Problem three: it's lopsided</h2>
+<pre><code class="language-python">"""MAPE punishes over-forecasting more than under-forecasting."""
+actual = 100
+for forecast in (50, 150, 0, 200):
+    print(f"actual {actual}, forecast {forecast:&gt;3}: APE {abs(forecast - actual) / actual:.0%}")
+print()
+# the same miss, the other way round: what you forecast becomes the base
+for actual, forecast in ((100, 50), (50, 100)):
+    print(f"actual {actual:&gt;3}, forecast {forecast:&gt;3}: APE {abs(forecast - actual) / actual:.0%}")</code></pre>
+<pre><code>actual 100, forecast  50: APE 50%
+actual 100, forecast 150: APE 50%
+actual 100, forecast   0: APE 100%
+actual 100, forecast 200: APE 100%
+
+actual 100, forecast  50: APE 50%
+actual  50, forecast 100: APE 100%</code></pre>
+<p>Under-forecasting can never cost more than 100%. Over-forecasting has no ceiling. And the same pair of numbers scores very differently depending on which one turned out to be the actual. A team graded on MAPE learns, consciously or not, that forecasting low is safer. That's the opposite of what you want from a forecast.</p>
+<h2>Use WAPE and bias instead</h2>
+<p><strong>WAPE</strong>, weighted absolute percentage error, adds up the absolute errors in dollars and divides by total actual bookings. It's what share of the actual you missed by, with every dollar counting the same. Big segments count more because they're bigger, zeros are no problem, and over- and under-forecasting are treated alike.</p>
+<p>In the table, overall WAPE is 19.3%. Remove the new region and it's 19%. That's the right behavior: a tiny segment barely moves a dollar-weighted number.</p>
+<p><strong>Bias</strong> is the signed total error divided by actuals. WAPE tells you how big your misses are. Bias tells you whether they lean one way. Enterprise is forecasting about 10% below what it books, every month on average. That's a different problem from noise, and it's fixable.</p>
+<p>Report them together. A forecast with 19% WAPE and no bias is noisy but honest. A forecast with 19% WAPE and -10% bias is consistently low, and someone should ask why.</p>
+<h2>Some practical notes</h2>
+<p><strong>Grade at the level decisions are made.</strong> If the board sees one company number, grade that. Errors in segments often cancel out in the total, so company-level accuracy is usually much better than segment-level accuracy. Both are worth knowing, but don't mix them.</p>
+<p><strong>Fix the forecast horizon.</strong> Measure the forecast made a set time before the period, for example on the first day of the quarter. Forecasts made in the last week of the quarter are always accurate and tell you nothing.</p>
+<p><strong>Compare against a baseline.</strong> A WAPE of 19% sounds fine, but it's only meaningful next to a simple alternative, such as last year's bookings for the same period adjusted for growth. If a naive forecast does as well, your process isn't adding much.</p>
+<p><strong>Keep small segments, but separate them.</strong> New regions and new products deserve forecasts. Report their accuracy on its own line, with a note that small numbers are noisy, so nobody mistakes noise for a problem.</p>
+<p>MAPE answers "how wrong were we, on average, as a percentage?" WAPE answers "how much of our revenue did we miss by?" The second question is the one the business cares about.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about forecasting and the ideas demand planners figured out first at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
