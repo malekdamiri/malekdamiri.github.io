@@ -1,0 +1,68 @@
+<p>When a weather forecaster says there's a 70% chance of rain, they're not wrong if it stays dry. They're wrong if it stays dry on most of the days they say 70%. Weather forecasting got good partly because forecasters were graded this way, with a score invented in 1950 by a meteorologist named Glenn Brier.</p>
+<p>Sales forecasts have the same structure. Every week, reps sort deals into categories like commit, best case, and pipeline. Each category is a probability statement, whether anyone says so or not. Commit means "very likely," maybe 90%. Best case means "could go either way." And just like weather, a single deal tells you nothing. A commit that slips might just be bad luck. You have to look at a lot of calls to know whether someone's commits mean what they say.</p>
+<h2>The Brier score</h2>
+<p>The Brier score is the average of the squared difference between the probability you gave and what happened, with won counted as 1 and lost as 0.</p>
+<p>Say commit means 90%. A committed deal that's won scores (0.9 - 1)², which is 0.01. A committed deal that's lost scores (0.9 - 0)², which is 0.81. Lower is better. A perfect forecaster scores 0. Someone who calls 50% on every deal scores 0.25.</p>
+<p>Squaring is what makes it fair. It punishes confident misses hard, and it can't be gamed: the best long-run strategy is to say what you actually believe.</p>
+<h2>In SQL</h2>
+<p>I simulated a year of deal-level forecast calls for four reps, 30 deals a quarter each. Ana reads deals well. Ben reads them well but calls everything a notch higher than he should. Cara can't tell good deals from bad ones. Dev reads them well and calls a notch low.</p>
+<p>Map each category to the probability it's meant to stand for, then score:</p>
+<pre><code class="language-sql">-- the forecast probability each category stands for
+with p as (
+    select * from (values ('commit', 0.90), ('best_case', 0.50), ('pipeline', 0.15)) t(category, prob)
+),
+scored as (
+    select c.rep, c.won, p.prob, power(p.prob - c.won, 2) as sq_err
+    from calls c join p using (category)
+),
+base as (select avg(won) as base_rate from calls)
+select rep,
+       count(*) as deals,
+       round(avg(sq_err), 3) as brier,
+       -- the score you'd get by giving every deal the same probability: the overall win rate
+       round(avg(power(base_rate - won, 2)), 3) as brier_no_skill,
+       round(1 - avg(sq_err) / avg(power(base_rate - won, 2)), 2) as skill
+from scored, base
+group by rep
+order by brier;</code></pre>
+<pre><code> rep  deals  brier  brier_no_skill  skill
+ Ana    120  0.194           0.240   0.19
+ Dev    120  0.201           0.248   0.19
+ Ben    120  0.231           0.248   0.07
+Cara    120  0.301           0.223  -0.35</code></pre>
+<p>The <code>brier_no_skill</code> column is the score each rep would have gotten by giving every deal the same probability, the overall win rate. It's the baseline. The <code>skill</code> column is how much better than that baseline each rep did: 0 means no better, negative means worse.</p>
+<p>Ana and Dev add real information. Ben adds a little. Cara's calls are worse than not calling at all: her forecast would improve if she put every deal in the same bucket.</p>
+<h2>Calibration: what the categories actually mean</h2>
+<p>The Brier score tells you who's good. A calibration table tells you how they're wrong.</p>
+<pre><code class="language-sql">-- did each category close at the rate it promised?
+select rep, category, count(*) as deals, round(avg(won), 2) as actually_won
+from calls
+group by rep, category
+order by rep, case category when 'commit' then 1 when 'best_case' then 2 else 3 end;</code></pre>
+<p>Share of deals won, by rep and category:</p>
+<pre><code>category  commit  best_case  pipeline
+rep
+Ana         0.80       0.52      0.18
+Ben         0.69       0.28      0.07
+Cara        0.37       0.33      0.24
+Dev         0.90       0.69      0.24</code></pre>
+<p>And how many deals each rep put in each category:</p>
+<pre><code>category  commit  best_case  pipeline
+rep
+Ana           15         50        55
+Ben           55         50        15
+Cara          30         57        33
+Dev           10         39        71</code></pre>
+<p>Now each rep's story is clear.</p>
+<p><strong>Ben</strong> commits 55 deals a year, and only 69% of them close. His best case closes 28% of the time. He's not a bad judge of deals, since his categories are in the right order. His labels are one notch too high. Multiply his commit by 0.7 and you have a decent forecast.</p>
+<p><strong>Dev</strong> is the mirror image. His commits close 90% of the time, but he only commits 10 deals. His best case closes 69% of the time, which is really a commit. He's sandbagging. His forecast is accurate and not very useful, because most of what he'll close sits in categories the roll-up discounts.</p>
+<p><strong>Cara's</strong> categories barely differ: 37%, 33%, 24%. She isn't biased in either direction. She just can't tell which deals will close. That's a coaching problem, about deal qualification and inspection, not a forecasting one.</p>
+<p><strong>Ana</strong> is close to calibrated. Her commits are a little light at 80%, which is within the noise for 15 deals.</p>
+<h2>Some cautions</h2>
+<p><strong>You need volume.</strong> With 15 commits in a year, an 80% close rate could easily be a 90% forecaster having an unlucky year. Pool several quarters before drawing conclusions about a rep, and treat the scores as a reason for a conversation, not a verdict.</p>
+<p><strong>Fix the snapshot.</strong> Score the call made at a fixed point, for example the first forecast call of the quarter. Calls made in the last week are easy and tell you little.</p>
+<p><strong>Agree on what categories mean first.</strong> If nobody has ever said that commit means 90%, reps can't be blamed for treating it as 70%. Write the probabilities down, then measure against them.</p>
+<p><strong>Don't put it on a leaderboard.</strong> The Brier score is a tool for improving forecasts. If it becomes a ranking, reps will optimize the ranking, for example by putting fewer deals in commit. Use it in one-on-ones and in the roll-up, not on a wall.</p>
+<h2>What changes</h2>
+<p>When forecast calls are graded, two things happen. Leaders stop relying on reputation to adjust a rep's number, and start using measured calibration. And reps start to treat categories as probability statements, because they know someone is checking. Both make the forecast better. Weather forecasting has been doing this for 75 years.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about forecasting and the statistics that make it honest at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
