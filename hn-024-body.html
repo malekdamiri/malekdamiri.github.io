@@ -1,0 +1,63 @@
+<p>Here's a conversation I suspect happens in a lot of companies. The CFO is preparing a board deck and pulls ARR for last March. The number doesn't match the one in the March board deck. It's off by a small amount, nobody can explain why, and the next hour goes to reconciling two numbers that were both calculated correctly.</p>
+<p>They were both correct. They just answered different questions. One answered "what was ARR on March 31, based on what we knew on April 5?" The other answered "what was ARR on March 31, based on everything we know today?" Those differ whenever anything about March gets entered after March ends, and something always does.</p>
+<h2>Why the past changes</h2>
+<p>ARR is usually calculated from a subscriptions table: every active subscription and its annual value, as of a date. Change the date and you get ARR on any day in the past.</p>
+<p>The problem is that the table gets corrected. A cancellation that took effect on March 20 gets entered on April 15, when the customer success team finally processes it. A contract signed on March 28 gets booked in the system on April 3. A pricing error gets fixed retroactively. Each of these is the right thing to do. And each one quietly changes what the query returns for March.</p>
+<h2>How much it moves</h2>
+<p>I simulated 2,500 subscriptions over about 18 months. Most changes are entered the day they happen. A few new subscriptions are entered up to six weeks late, and about one cancellation in five is entered after the fact, sometimes months later. That's a modest amount of lateness.</p>
+<p>The trick to measuring it is to keep two dates on every change: when it takes effect, and when it was recorded. Then you can ask for ARR as of any date, as known on any date:</p>
+<pre><code class="language-sql">-- ARR on a date, as the data looked on another date.
+-- Each subscription's ARR is its latest change effective on or before as_of_date,
+-- counting only changes that had been recorded by known_on.
+create or replace macro arr_as_of(as_of_date, known_on) as table
+select sum(arr) as arr from (
+    select arg_max(arr_after, effective_date) as arr
+    from changes
+    where effective_date &lt;= as_of_date and recorded_at &lt;= known_on
+    group by sub_id
+);</code></pre>
+<p>Compare month-end ARR as it was reported five days after each month closed with the same month end recomputed today:</p>
+<pre><code class="language-sql">-- month-end ARR as reported five days after month end, vs the same month end recomputed today
+with month_ends as (
+    select unnest(generate_series(date '2025-07-31', date '2026-05-31', interval 1 month))::date as d
+)
+select strftime(last_day(d), '%Y-%m') as month,
+       (select arr from arr_as_of(last_day(d), last_day(d) + 5)) as reported,
+       (select arr from arr_as_of(last_day(d), date '2026-09-30')) as recomputed_today
+from month_ends
+order by 1;</code></pre>
+<pre><code>  month  reported  recomputed_today  net_new_reported  net_new_today net_new_change
+2025-08     23.29             23.49              2.74           2.95            +8%
+2025-09     25.46             25.61              2.18           2.12            -3%
+2025-10     28.63             28.56              3.16           2.95            -7%
+2025-11     30.79             30.79              2.16           2.23            +3%
+2025-12     33.36             33.36              2.57           2.57            -0%
+2026-01     35.32             35.26              1.96           1.90            -3%
+2026-02     36.95             36.91              1.63           1.65            +1%
+2026-03     38.88             38.87              1.93           1.96            +2%
+2026-04     40.62             40.45              1.74           1.58            -9%
+2026-05     43.22             43.10              2.60           2.65            +2%</code></pre>
+<p>(ARR in millions.) The ARR totals barely move, usually by less than 1%. That's why nobody notices until two decks sit side by side.</p>
+<p>But look at net new ARR, the number that matters most for growth. It moves by up to 9%. April's net new ARR was reported as $1.74 million and is $1.58 million today. A growth story told in May is no longer the growth story you'd tell today, about the same month.</p>
+<h2>Two fixes</h2>
+<p><strong>Fix one: snapshot it.</strong> Once a day, after the CRM and billing data have synced, write ARR by subscription to a table with today's date on it, and never update that table again.</p>
+<pre><code class="language-sql">-- run once a day, right after the CRM and billing sync: freeze today's ARR by subscription
+create table if not exists arr_snapshots (snapshot_date date, sub_id integer, arr double);
+
+insert into arr_snapshots
+select current_date, sub_id, arg_max(arr_after, effective_date)
+from changes
+where effective_date &lt;= current_date
+group by sub_id;</code></pre>
+<p>Board reporting reads from the snapshots. March's ARR is whatever the March 31 snapshot says. It never changes, because nothing ever writes to that row again. When a late cancellation comes in, it shows up in the snapshot for the day it was recorded, as a change that day.</p>
+<p>Snapshots are simple and almost every data tool supports them. They cost storage, but ARR by subscription per day is small. They have one weakness: you can only snapshot from the day you start. If you don't have them yet, start today.</p>
+<p><strong>Fix two: keep both dates.</strong> The <code>as_of</code> macro above is the second approach: store every change with an effective date and a recorded date, and you can rebuild any past view on demand. This is more flexible, since you can ask what ARR looked like on any day, as known on any later day. It's also more work, because every system feeding the table has to supply a reliable recorded date.</p>
+<p>I'd start with snapshots. Most teams can set them up in an afternoon.</p>
+<h2>Report the corrections</h2>
+<p>Freezing history doesn't mean ignoring corrections. Late cancellations and backdated deals are real, and finance needs to know about them. The difference is where they go.</p>
+<p><strong>Show corrections as their own line.</strong> In the month a correction is recorded, show it separately: "Net new ARR $2.6 million, of which -$0.1 million is corrections to prior months." The prior month's number stays as reported.</p>
+<p><strong>Track the size of corrections.</strong> If corrections regularly move net new ARR by 5% or more, something upstream is slow. Usually it's cancellation processing. Measure the lag between effective date and recorded date, and give it an owner.</p>
+<p><strong>Agree on a close date.</strong> Finance closes the books on a set day each month. ARR reporting should do the same: after the fifth business day, a month's ARR is frozen, and anything later is a correction.</p>
+<h2>Why it matters</h2>
+<p>A number that changes after it's reported is worse than a number that's slightly wrong. Slightly wrong can be corrected openly. A number that silently changes makes everyone doubt every number. Freeze the history, show the corrections, and the board deck from March will match the board deck from today.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about revenue data, reporting, and the systems behind them at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
