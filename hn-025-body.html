@@ -1,0 +1,76 @@
+<p>An ARR bridge is the chart that walks from the start of a period to the end: starting ARR, plus new, plus expansion, minus contraction, minus churn, equals ending ARR. Boards love it because it shows where growth came from. Finance teams dread it, because the first version almost never adds up, and the last version usually has a line called "other."</p>
+<p>The arithmetic is simple. The trouble is in the definitions. Here are the three mistakes that break most bridges, a simulated quarter that shows each one, and the SQL for a bridge that balances.</p>
+<h2>The simulated quarter</h2>
+<p>1,500 accounts, about 30% billed in euros. During the quarter, some accounts add seats, some cut back, and some churn. Some upgrade from the core plan to a pro plan, which in the billing system means the core subscription ends and a pro subscription starts. A few new customers sign, and a few customers who churned last year come back. The euro strengthens from $1.08 to $1.15.</p>
+<h2>Mistake one: classifying subscriptions instead of accounts</h2>
+<p>The first bridge most teams build classifies each subscription line: started this quarter is new, ended this quarter is churn, and so on.</p>
+<pre><code class="language-sql">-- the bridge most teams build first: classify each subscription, convert at today's rate
+select case when arr_start = 0 and arr_end &gt; 0 then '2 new'
+            when arr_start &gt; 0 and arr_end = 0 then '5 churn'
+            when arr_end &gt; arr_start then '3 expansion'
+            when arr_end &lt; arr_start then '4 contraction'
+            else '0 flat' end as movement,
+       round(sum((arr_end - arr_start) * x.usd_end) / 1e6, 2) as usd_m
+from subs s join fx x using (currency)
+group by 1
+order by 1;</code></pre>
+<pre><code>     movement  usd_m
+       0 flat   0.00
+        2 new   5.82
+  3 expansion   1.04
+4 contraction  -0.45
+      5 churn  -5.20</code></pre>
+<p>$5.8 million of new ARR and $5.2 million of churn. Both are wrong by a lot.</p>
+<p>When an account upgrades from core to pro, the billing system ends one subscription and starts another. At the subscription level, that's a churned subscription and a new one. At the account level, it's a happy customer paying 50% more. The same thing happens with add-on products: a new subscription line, but not a new customer.</p>
+<p>So the subscription bridge reports a lot of new business that's really expansion, and a lot of churn that's really an upgrade. The net is the same, which is why people don't notice. The story is completely different.</p>
+<p><strong>Fix:</strong> classify at the account level. Sum each account's ARR at the start and end, then compare.</p>
+<h2>Mistake two: treating returning customers as new</h2>
+<p>A customer who left last year and came back this quarter has zero ARR at the start of the quarter. An account-level bridge will call that new, unless you check the account's history.</p>
+<p>Returning customers behave differently from new ones. They already know the product, often come back at a similar price, and are a sign that something about your product or pricing changed for the better. Mixing them into new business inflates the new-logo number and hides a useful signal.</p>
+<p><strong>Fix:</strong> a reactivation line, for accounts with zero ARR at the start of the period that had ARR at some point before it.</p>
+<h2>Mistake three: currency</h2>
+<p>ARR in euros is converted to dollars for reporting. Last quarter's ending ARR was converted at last quarter's rate. This quarter's starting ARR has to be the same number, or the bridge won't connect to the previous one.</p>
+<p>But if you convert everything at today's rate, a customer paying the same €50,000 they paid last quarter now shows up with more dollars of ARR, because the euro got stronger. That increase isn't expansion. Nobody sold anything.</p>
+<pre><code>   start_at_start_rate  start_at_end_rate  ending
+0                41.36              42.23   43.43</code></pre>
+<p>Converted at the old rate, starting ARR is $41.36 million, which matches last quarter's reported ending ARR. Converted at today's rate, it's $42.23 million. The $0.87 million difference is pure currency movement. If the bridge starts from the reported number but classifies changes at today's rate, it's $0.87 million short, and that's usually where the "other" line comes from.</p>
+<p><strong>Fix:</strong> convert starting ARR at the starting rate and ending ARR at the ending rate, and show the currency effect on its own line.</p>
+<h2>The bridge that balances</h2>
+<pre><code class="language-sql">-- classify at the account level, split out returning customers, and convert both ends at their own rates
+with acct as (
+    select account_id,
+           any_value(account_history) filter (where account_history &lt;&gt; 'active') as history,
+           sum(arr_start * x.usd_start) as start_usd,
+           sum(arr_end * x.usd_end) as end_usd,
+           sum(arr_start * (x.usd_end - x.usd_start)) as fx_effect      -- what the rate change alone did
+    from subs s join fx x using (currency)
+    group by account_id
+)
+select movement, round(sum(amount) / 1e6, 2) as usd_m from (
+    select '1 starting ARR' as movement, start_usd as amount from acct
+    union all select '2 new', end_usd from acct where start_usd = 0 and history = 'new'
+    union all select '3 reactivation', end_usd from acct where start_usd = 0 and history = 'returning'
+    union all select '4 expansion', end_usd - start_usd - fx_effect from acct where start_usd &gt; 0 and end_usd - fx_effect &gt; start_usd
+    union all select '5 contraction', end_usd - start_usd - fx_effect from acct where end_usd &gt; 0 and end_usd - fx_effect &lt; start_usd
+    union all select '6 churn', -start_usd from acct where start_usd &gt; 0 and end_usd = 0
+    union all select '7 fx', fx_effect from acct where end_usd &gt; 0
+    union all select '8 ending ARR', end_usd from acct
+)
+group by 1
+order by 1;</code></pre>
+<pre><code>      movement  usd_m
+1 starting ARR  41.36
+         2 new   1.07
+3 reactivation   0.69
+   4 expansion   2.65
+ 5 contraction  -0.45
+       6 churn  -2.70
+          7 fx   0.82
+  8 ending ARR  43.43</code></pre>
+<p>It starts from the reported number and ends at the reported number, with every movement in between. New business is $1.1 million, not $5.8 million. Churn is $2.7 million, not $5.2 million. Expansion is $2.7 million, not $1 million. And currency added $0.8 million that nobody should take credit for. (The currency line here only counts accounts still active at the end; churned accounts are taken out at their starting value.)</p>
+<p>Same quarter, same data, and a much more accurate story: this business is growing mostly by expanding existing customers, not by winning new ones.</p>
+<h2>Rules to write down</h2>
+<p>Every bridge needs a short definitions page, agreed with finance before the first board meeting. Mine would say:</p>
+<ul><li><strong>Grain:</strong> movements are classified per account, using the account's total ARR at the start and end of the period.</li><li><strong>New:</strong> zero ARR at the start of the period and never had ARR before.</li><li><strong>Reactivation:</strong> zero ARR at the start of the period, but had ARR at some earlier point.</li><li><strong>Expansion and contraction:</strong> an account's ARR went up or down, measured in constant currency.</li><li><strong>Churn:</strong> an account's ARR went to zero.</li><li><strong>Currency:</strong> the change from converting at the period's ending rate instead of its starting rate.</li><li><strong>Starting ARR:</strong> always equals the prior period's reported ending ARR.</li></ul>
+<p>With those rules, there is no "other" line, and the bridge connects from one quarter to the next without anyone having to explain a gap.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about SaaS metrics and the reporting behind them at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
