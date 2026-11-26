@@ -1,0 +1,60 @@
+<p>Every sales team believes discounts help close deals. Most finance teams suspect the discounts are mostly given away to deals that would have closed anyway. Both sides usually bring data to the argument, and both sides' data is usually wrong in the same way: it compares deals that got a discount with deals that didn't, as if the discount were handed out at random.</p>
+<p>It isn't. Discounts go to particular deals at particular moments, and that's enough to make the comparison say almost anything. Here's how the obvious analysis goes wrong in both directions, and what you can trust.</p>
+<h2>The setup</h2>
+<p>I simulated 6,000 deals. Each has an underlying strength, which nobody sees directly. Stronger deals are more likely to reach negotiation. Discounts are only offered in negotiation, as they are in most sales processes, and most negotiated deals get one. Reps give shakier deals deeper discounts, because those are the deals they're worried about.</p>
+<p>The true effect, which I built into the simulation so we can check the analysis against it: a discount adds 5 points to a negotiated deal's chance of closing.</p>
+<h2>The slide</h2>
+<pre><code class="language-sql">-- the comparison that ends up on a slide
+select discount &gt; 0 as discounted, count(*) as deals, round(avg(won::int), 2) as win_rate
+from deals
+group by 1
+order by 1;</code></pre>
+<pre><code> discounted  deals  win_rate
+      False   4555      0.12
+       True   1445      0.63</code></pre>
+<p>Discounted deals win 63% of the time. Deals without a discount win 12%. On a slide, that's "discounts quintuple win rate," and it's the strongest argument a sales leader could ask for.</p>
+<p>It's almost entirely an illusion. Discounts are only given to deals that reach negotiation. Deals that reach negotiation win often, discount or not. The no-discount group is full of deals that died in discovery, never got anywhere near a price conversation, and were never candidates for a discount at all. The comparison isn't measuring the discount. It's measuring the difference between early-stage and late-stage deals.</p>
+<h2>Compare like with like</h2>
+<p>The first fix: only compare deals that had a chance of getting a discount. Here, that means deals that reached negotiation.</p>
+<pre><code class="language-sql">-- compare only deals that reached the stage where discounts are offered
+select discount &gt; 0 as discounted, count(*) as deals, round(avg(won::int), 2) as win_rate
+from deals
+where reached_negotiation
+group by 1
+order by 1;</code></pre>
+<pre><code> discounted  deals  win_rate
+      False    914      0.58
+       True   1445      0.63</code></pre>
+<p>Now the gap is 5 points, which matches the true effect. Discounts help a little. That's a much more useful number than "five times," because now you can ask whether 5 points of win rate is worth what the discounts cost.</p>
+<h2>The trap in the other direction</h2>
+<p>Once people see this, the next question is how deep the discount should be. So they split by discount size:</p>
+<pre><code class="language-sql">-- and by depth of discount
+select case when discount = 0 then '0 none'
+            when discount &lt; 0.15 then '1 under 15%'
+            when discount &lt; 0.25 then '2 15-25%'
+            else '3 25%+' end as band,
+       count(*) as deals,
+       round(avg(won::int), 2) as win_rate
+from deals
+where reached_negotiation
+group by 1
+order by 1;</code></pre>
+<pre><code>       band  deals  win_rate
+     0 none    914      0.58
+1 under 15%    800      0.68
+   2 15-25%    544      0.59
+     3 25%+    101      0.39</code></pre>
+<p>Deep discounts win 39% of the time, worse than no discount at all. Does that mean big discounts hurt? Finance might argue so.</p>
+<p>No. Every discount in the simulation has exactly the same effect. Reps give deep discounts to deals that are struggling, so the deep-discount group is full of weak deals. The comparison is again measuring which deals got the treatment, not what the treatment did. Small discounts look great for the same reason: they go to strong deals that only needed a nudge.</p>
+<p>This is selection bias, and it runs in whatever direction the selection runs.</p>
+<h2>What you can actually learn from the CRM</h2>
+<p><strong>Compare within the stage where discounts happen.</strong> It removes the biggest bias. It doesn't remove the bias from reps choosing which negotiated deals to discount, which is why you should treat the 5-point gap as a rough estimate.</p>
+<p><strong>Track cost, not just win rate.</strong> Total discount dollars on won deals is a real cost, measured exactly. Divide it by the extra deals the discount plausibly won. If discounts add 5 points of win rate on 1,445 deals, that's about 72 extra wins. If the total discount on all won deals was $3 million, each extra win cost about $42,000 in discount, and many of those dollars went to deals that would have closed anyway.</p>
+<p><strong>Look at timing.</strong> Discounts offered in the last week of a quarter are a different thing from discounts negotiated through a normal process. Split them.</p>
+<p><strong>Look at discount consistency by rep.</strong> If one rep discounts 30% on every deal and another discounts 10%, with similar win rates, the difference is habit, not necessity.</p>
+<h2>The only clean answer is a test</h2>
+<p>If discounting decisions are big enough to matter, test them. For a quarter, cap discounts at a lower level for a random half of reps or territories and leave the rest alone. Then compare win rates, deal sizes, and cycle times between the groups. Random assignment is the only thing that breaks the link between which deals get discounts and how strong those deals are.</p>
+<p>It's uncomfortable to run, because some deals may be lost. But companies give away a lot of revenue in discounts every year on the strength of comparisons that can't tell them whether it's working.</p>
+<h2>The point</h2>
+<p>"Discounted deals win more" and "deep discounts win less" are both true, and neither tells you what a discount does. The deals that get discounts are not like the deals that don't. Compare within the stage where discounts are offered, count the cost, and if it matters enough, test it.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about sales data and the analysis traps inside it at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
