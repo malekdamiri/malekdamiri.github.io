@@ -1,0 +1,86 @@
+<p>Most price increases in B2B software are judged the same way. The increase goes out at renewal, churn goes up a bit or doesn't, and six months later someone says it worked, or that it cost us customers. Either conclusion is mostly a guess, because churn moves for lots of reasons, and there's nothing to compare against.</p>
+<p>The fix is old and simple: hold some customers back. Give a random slice of renewals the old price, and compare. It's the only way to know what the increase did. But a holdout has a catch that most teams don't see coming, and it changes how you should read the result.</p>
+<h2>The setup</h2>
+<p>I simulated 3,000 renewals over a few months. 90% get a 10% price increase. A random 10% keep the old price. I built in the true effect: churn at renewal is 8% at the old price and 10% at the new one. So the increase costs 2 points of churn.</p>
+<pre><code class="language-python">"""A 10% price increase at renewal, with a random holdout that keeps the old price.
+
+True effect built in: churn at renewal is 8% at the old price and 10% at the new one.
+"""
+import math
+import random
+
+random.seed(27)
+
+
+def run(n_accounts, holdout_share):
+    groups = {"holdout": [], "increase": []}
+    for _ in range(n_accounts):
+        arr = random.lognormvariate(9.5, 0.8)
+        g = "holdout" if random.random() &lt; holdout_share else "increase"
+        churn_p = 0.08 if g == "holdout" else 0.10
+        stayed = random.random() &gt;= churn_p
+        new_arr = arr * (1.10 if g == "increase" else 1.0) * stayed
+        groups[g].append((arr, new_arr, stayed))
+    return groups
+
+
+def summarize(groups):
+    out = {}
+    for g, rows in groups.items():
+        n = len(rows)
+        churn = 1 - sum(s for _, _, s in rows) / n
+        retention = sum(b for _, b, _ in rows) / sum(a for a, _, _ in rows)
+        out[g] = (n, churn, retention)
+        print(f"{g:9s} n={n:5d}  churn {churn:5.1%}  revenue kept {retention:6.1%}")
+    (n1, c1, _), (n2, c2, _) = out["holdout"], out["increase"]
+    se = math.sqrt(c1 * (1 - c1) / n1 + c2 * (1 - c2) / n2)
+    diff = c2 - c1
+    print(f"extra churn from the increase: {diff:+.1%}  (95% interval {diff - 1.96 * se:+.1%} to {diff + 1.96 * se:+.1%})")
+
+
+print("3,000 renewals, 10% holdout")
+summarize(run(3000, 0.10))
+
+
+def holdout_needed(p1, p2, share):
+    """Total renewals needed to detect churn p1 vs p2 (two-sided 5%, 80% power) with this holdout share."""
+    z = 1.96 + 0.84
+    var = p1 * (1 - p1) / share + p2 * (1 - p2) / (1 - share)
+    return math.ceil(z ** 2 * var / (p2 - p1) ** 2)
+
+
+print("\nrenewals needed to detect 8% vs 10% churn")
+for share in (0.05, 0.10, 0.20, 0.50):
+    n = holdout_needed(0.08, 0.10, share)
+    print(f"  holdout {share:4.0%}: {n:6,d} renewals ({int(n * share):,} held out)")</code></pre>
+<h2>The result</h2>
+<pre><code>3,000 renewals, 10% holdout
+holdout   n=  277  churn  5.4%  revenue kept  94.0%
+increase  n= 2723  churn 10.3%  revenue kept  98.7%
+extra churn from the increase: +4.9%  (95% interval +2.0% to +7.8%)</code></pre>
+<p>The holdout says the increase added 4.9 points of churn. The true answer is 2. The holdout group happened to churn less than its true rate, which is what small groups do. With only 277 accounts held out, a handful of renewals going one way or the other moves the rate by a point or more.</p>
+<p>The confidence interval, 2.0 to 7.8 points, is the honest summary. It's wide. If your decision depends on whether the increase cost 2 points of churn or 5, this test can't tell you.</p>
+<h2>How big should the holdout be?</h2>
+<p>This is the catch. Detecting a small difference between two small churn rates takes a lot of renewals.</p>
+<pre><code>renewals needed to detect 8% vs 10% churn
+  holdout   5%: 30,709 renewals (1,535 held out)
+  holdout  10%: 16,386 renewals (1,638 held out)
+  holdout  20%:  9,418 renewals (1,883 held out)
+  holdout  50%:  6,414 renewals (3,207 held out)</code></pre>
+<p>To reliably detect a 2-point rise in churn with a 10% holdout, you need over 16,000 renewals. A bigger holdout helps, but it means more customers on the old price, which costs money. A company with 3,000 renewals a year can't measure a 2-point churn effect precisely, whatever it does.</p>
+<p>That sounds like bad news. It's actually useful, because it tells you what question the test can answer.</p>
+<h2>Measure revenue, not just churn</h2>
+<p>Look at the "revenue kept" column again. The increase group kept 98.7% of its starting revenue, including the price rise, net of churn. The holdout kept 94.0%. Even with the noisy churn estimate, the increase clearly made money: the extra 10% on the customers who stayed far outweighs the extra customers who left.</p>
+<p>That's usually the real question. A price increase doesn't fail because churn rises a little. It fails if churn rises enough to wipe out the extra revenue. With a 10% increase and churn around 8%, churn would have to roughly double before the increase lost money. A holdout of a few hundred accounts can easily tell you whether you're anywhere near that.</p>
+<p>So set up the test to answer "did we come out ahead?" rather than "exactly how much did churn change?" The first needs a much smaller sample.</p>
+<h2>Running a holdout properly</h2>
+<p><strong>Randomize by account, before anyone knows.</strong> Pick the holdout from the list of upcoming renewals with a random number, not by letting account managers choose. If CSMs pick which customers to protect, they'll pick the risky ones, and the comparison will be meaningless.</p>
+<p><strong>Decide what you'll measure before you start.</strong> Churn at renewal, revenue retained, and downgrades at renewal. Write it down. Deciding after you've seen the results invites picking whichever metric looks best.</p>
+<p><strong>Hold the holdout long enough.</strong> Some customers who accept an increase leave at the next renewal instead. If you can, keep the holdout on the old price for a full year and check again.</p>
+<p><strong>Watch for contamination.</strong> Customers talk. If held-out customers learn that others got an increase, or if account managers treat the two groups differently, the comparison weakens. Keep the process identical apart from the price.</p>
+<p><strong>Stratify if your customers differ a lot.</strong> If small and large customers react very differently, randomize within each size band, so the holdout isn't accidentally full of one kind.</p>
+<h2>Is it fair to customers?</h2>
+<p>Some teams worry that a holdout is unfair, because some customers pay more than others. But every price increase already creates this. Customers who renewed last month pay the old price for another year, and those who renew next month pay the new one. A holdout just makes the split random instead of determined by renewal dates, and it means you'll learn something from it.</p>
+<h2>The takeaway</h2>
+<p>Without a holdout, a price increase can't be judged, only argued about. With one, you'll learn whether you came out ahead, even if you can't measure the churn effect to the decimal point. Size the test for the question you can actually answer, measure revenue as well as churn, and let a random number pick the holdout.</p>
+<p><em>I'm Malek Damiri, head of revenue operations in Atlanta. I write about pricing, retention, and measuring both honestly at <a href="https://malekdamiri.com">malekdamiri.com</a>.</em></p>
